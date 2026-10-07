@@ -16,8 +16,8 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, {status:204,headers:cors});
     if (origin && origin !== env.PAGES_ORIGIN) return response({error:'Origin not allowed'},403,cors);
     try {
-      if (url.pathname === '/auth/start' && request.method === 'GET') return authStart(url, env);
-      if (url.pathname === '/auth/callback' && request.method === 'GET') return authCallback(url, env);
+      if (url.pathname === '/auth/start' && request.method === 'GET') return await authStart(url, env);
+      if (url.pathname === '/auth/callback' && request.method === 'GET') return await authCallback(url, env);
       if (url.pathname === '/api/me' && request.method === 'GET') {
         const viewer = await authorize(request, env);
         return response({login:viewer.login,permission:viewer.permission},200,cors);
