@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Launch Engine workload intake catalog and form">
+  <title>Launch Engine Intake</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./vendor/marked.umd.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="#/" aria-label="Launch Engine Intake home">
+        <span class="brand-mark">L</span>
+        <span><strong>Launch Engine</strong><small>Workload intake</small></span>
+      </a>
+      <nav class="top-nav" aria-label="Main navigation">
+        <a href="#/" id="nav-catalog">Catalog</a>
+        <a href="#/new" id="nav-new">New entry</a>
+        <button type="button" id="auth-button" class="button button-quiet">Sign in with GitHub</button>
+      </nav>
+    </div>
+  </header>
+  <main id="app" class="shell" aria-live="polite"></main>
+  <footer class="site-footer shell">
+    <span>Launch Engine Intake</span>
+    <span>Entries in this catalog are public.</span>
+    <a href="https://github.com/michaelsheerin/launch-engine-intake" target="_blank" rel="noopener noreferrer">Repository</a>
+  </footer>
+</body>
+</html>
