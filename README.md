@@ -27,7 +27,7 @@ The public catalog reads through the Worker when available, with a direct GitHub
 1. Publish GitHub Pages from the `main` branch and `/docs` folder.
 2. Create a GitHub OAuth App with homepage `https://michaelsheerin.github.io/launch-engine-intake/` and callback `https://launch-engine-intake.msheerin01.workers.dev/auth/callback`.
 3. Deploy `worker/worker.js` to Cloudflare with the values in `worker/wrangler.toml`.
-4. Set Worker secrets `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `SESSION_KEY`. Use a long random value for `SESSION_KEY`.
+4. Set `GITHUB_CLIENT_ID` as a Worker variable. Set `GITHUB_CLIENT_SECRET` and `SESSION_KEY` as Worker secrets. Use a long random value for `SESSION_KEY`.
 5. Check the sample catalog entry, then verify create, edit, and delete using a disposable fictional record.
 
 The OAuth App requests GitHub's `public_repo` scope. Restrict repository write access to the intended submitters. Public records must contain approved public information only.
