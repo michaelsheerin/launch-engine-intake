@@ -1,0 +1,9 @@
+name = "launch-engine-intake"
+main = "worker.js"
+compatibility_date = "2026-10-07"
+
+[vars]
+GITHUB_OWNER = "michaelsheerin"
+GITHUB_REPO = "launch-engine-intake"
+PAGES_ORIGIN = "https://michaelsheerin.github.io"
+PAGES_PATH = "/launch-engine-intake/"
