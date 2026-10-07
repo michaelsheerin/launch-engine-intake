@@ -378,15 +378,16 @@ async function showEntry(id) {
 }
 async function startForm(id=null) {
   editingId=id;
-  if (id) {
+  const saved=sessionStorage.getItem('launchDraft');
+  sessionStorage.removeItem('launchDraft');
+  let restored=null;
+  if(saved){try{const item=JSON.parse(saved);if(item?.draft && item.editingId===id)restored=item.draft;}catch{}}
+  if (restored) draft=restored;
+  else if (id) {
     app.innerHTML='<div class="loading">Loading entry…</div>';
     try { const {entry}=await api(`/api/entries/${encodeURIComponent(id)}`);draft=entry; }
     catch(error) { app.innerHTML=message(`Could not load entry: ${error.message}`,true);return; }
-  } else {
-    const saved=sessionStorage.getItem('launchDraft');
-    if(saved){try{const item=JSON.parse(saved);draft=item.draft;editingId=item.editingId;}catch{draft=blankEntry();}sessionStorage.removeItem('launchDraft');}
-    else draft=blankEntry();
-  }
+  } else draft=blankEntry();
   renderForm();
 }
 async function submitForm() {
