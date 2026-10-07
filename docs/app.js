@@ -272,7 +272,7 @@ function cards(items, render) { return items?.length ? `<div class="item-list">$
 function selectedRows(object, labels, mandate=false) {
   return labels.map((label,i) => {
     const item = object?.[i]; if (!item?.selected && !item?.note) return '';
-    return `<div class="item-card"><span class="tag">${esc(label)}</span>${mandate && item?.executiveMandate ? '<span class="tag">Executive mandate</span>' : ''}${item?.note ? `<p>${esc(item.note)}</p>` : ''}</div>`;
+    return `<div class="item-card"><span class="tag">${esc(label)}</span>${!item?.selected ? '<span class="tag tag-muted">Not selected</span>' : ''}${mandate && item?.executiveMandate ? '<span class="tag">Executive mandate</span>' : ''}${item?.note ? `<p>${esc(item.note)}</p>` : ''}</div>`;
   }).join('');
 }
 function recordBody(record) {
