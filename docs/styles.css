@@ -78,8 +78,10 @@ main{padding:0 0 72px}
 .choice-table-row{border-top:1px solid var(--line);background:#fff}
 .choice-table-row:nth-child(odd){background:#fbfcfe}
 .goals-table .choice-table-head{grid-template-columns:44px minmax(200px,1fr) 126px 126px minmax(360px,2fr);padding-left:0}
-.goal-group{display:grid;grid-template-columns:44px minmax(0,1fr);border-top:1px solid var(--line)}
+.goal-group{display:grid;grid-template-columns:44px minmax(0,1fr);border-top:1px solid #aebfd0}
+.goal-group:last-child{border-bottom:1px solid #aebfd0}
 .goal-group-label{display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;background:#eaf1f8;border-right:1px solid var(--line);color:var(--blue);font-size:12px;font-weight:700;letter-spacing:.02em;padding:12px 0}
+.goal-group-label span{display:block;transform:rotate(180deg)}
 .goal-group-rows{min-width:0}
 .goal-group-rows .choice-table-row:first-child{border-top:0}
 .choice-label{font-size:14px;font-weight:600;line-height:1.35}
