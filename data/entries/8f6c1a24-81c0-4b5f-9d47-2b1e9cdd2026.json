@@ -118,11 +118,12 @@
     {"name":"Operations handoff","shortDescription":"The platform team accepts monitoring, backup, and incident ownership.","impactsGoNoGo":"No","isMeasurableMetric":"No"}
   ],
   "assessment": {
-    "applications":{"currentState":"EBS 12.2 application tier on 14 Linux VMs.","targetState":"OCI Compute application tier across two availability domains where available.","requirements":"Review custom extensions, interface endpoints, and supported software versions.","gaps":"Complete partner inventory of custom concurrent programs.","customerOwner":"Elena Ortiz (fictional)"},
-    "data":{"currentState":"Oracle Database 19c, 22 TB allocated storage, nightly RMAN backups.","targetState":"Proposed Oracle Base Database Service with encrypted backups in Object Storage.","requirements":"Validate throughput, backup retention, licensing, and data transfer sequence.","gaps":"Finalize database service selection and validated production sizing.","customerOwner":"Noah Brooks (fictional)"},
-    "network":{"currentState":"Ohio data center hub with MPLS access and firewall policy sets.","targetState":"FastConnect to Ashburn with VPN fallback and segmented VCNs.","requirements":"Customer network team owns CIDR, DNS, routing, and firewall changes.","gaps":"Confirm FastConnect delivery date and route advertisement plan.","customerOwner":"Noah Brooks (fictional)"},
-    "security":{"currentState":"Corporate identity provider, centralized SIEM, privileged access review.","targetState":"Federated OCI IAM, audit export, Cloud Guard, encrypted secrets.","requirements":"Customer security team approves role mappings and log retention.","gaps":"Review privileged break-glass access and SIEM connector design.","customerOwner":"Mina Patel (fictional)"},
-    "resilience":{"currentState":"Nightly backups; manual DR runbook at secondary data center.","targetState":"Four-hour RTO target with replicated backups and tested restore steps.","requirements":"Customer owns DR test and production rollback criteria.","gaps":"Finalize RPO target and schedule restore test.","customerOwner":"Elena Ortiz (fictional)"}
+    "applications":{"currentState":"EBS 12.2 application tier on 14 Linux VMs.","targetState":"OCI Compute application tier across two availability domains where available.","requirements":"Review custom extensions, interface endpoints, and supported software versions.","gaps":"Complete partner inventory of custom concurrent programs.","customerOwner":"Elena Ortiz (fictional)","architectureDiagram":"https://example.com/demo/architecture/applications"},
+    "data":{"currentState":"Oracle Database 19c, 22 TB allocated storage, nightly RMAN backups.","targetState":"Proposed Oracle Base Database Service with encrypted backups in Object Storage.","requirements":"Validate throughput, backup retention, licensing, and data transfer sequence.","gaps":"Finalize database service selection and validated production sizing.","customerOwner":"Noah Brooks (fictional)","architectureDiagram":"https://example.com/demo/architecture/data"},
+    "network":{"currentState":"Ohio data center hub with MPLS access and firewall policy sets.","targetState":"FastConnect to Ashburn with VPN fallback and segmented VCNs.","requirements":"Customer network team owns CIDR, DNS, routing, and firewall changes.","gaps":"Confirm FastConnect delivery date and route advertisement plan.","customerOwner":"Noah Brooks (fictional)","architectureDiagram":"https://example.com/demo/architecture/network"},
+    "security":{"currentState":"Corporate identity provider, centralized SIEM, privileged access review.","targetState":"Federated OCI IAM, audit export, Cloud Guard, encrypted secrets.","requirements":"Customer security team approves role mappings and log retention.","gaps":"Review privileged break-glass access and SIEM connector design.","customerOwner":"Mina Patel (fictional)","architectureDiagram":"https://example.com/demo/architecture/security"},
+    "resilience":{"currentState":"Nightly backups; manual DR runbook at secondary data center.","targetState":"Four-hour RTO target with replicated backups and tested restore steps.","requirements":"Customer owns DR test and production rollback criteria.","gaps":"Finalize RPO target and schedule restore test.","customerOwner":"Elena Ortiz (fictional)","architectureDiagram":"https://example.com/demo/architecture/resilience"},
+    "other":{"currentState":"A separate batch scheduler and managed file transfer gateway serve EBS interfaces.","targetState":"The customer plans OCI-hosted scheduling with private connectivity to the retained transfer gateway.","requirements":"Confirm job sequencing, credentials, and end-to-end transfer testing.","gaps":"Decide whether the gateway migrates in a later phase.","customerOwner":"Priya Shah (fictional)","architectureDiagram":"https://example.com/demo/architecture/integrations"}
   },
   "readiness": {
     "tenancy":{"status":"Complete","owner":"Noah Brooks (fictional)","evidenceMarkdown":"Existing OCI tenancy and compartment plan; cost tags defined for EBS environments."},
@@ -133,20 +134,13 @@
     "operations":{"status":"Open","owner":"Priya Shah (fictional)","evidenceMarkdown":"Partner is drafting backup, restore, incident, and change procedures."},
     "capacity":{"status":"Open","owner":"Jordan Lee (fictional)","evidenceMarkdown":"Sizing estimate exists; region capacity review is still open."}
   },
-  "raid": [
-    {"type":"Risk","descriptionMarkdown":"FastConnect delivery slips beyond nonproduction test start.","impactMarkdown":"Use VPN fallback for limited testing; customer approves any performance tradeoff.","owner":"Noah Brooks (fictional)","dueDate":"2026-11-13","evidence":"DEMO-NET-225"},
-    {"type":"Assumption","descriptionMarkdown":"Existing Oracle licenses cover the proposed target configuration.","impactMarkdown":"Customer licensing team must validate before the design is locked.","owner":"Elena Ortiz (fictional)","dueDate":"2026-11-20","evidence":"DEMO-LIC-38"},
-    {"type":"Issue","descriptionMarkdown":"One custom EBS integration has no current owner.","impactMarkdown":"Assign an owner before the first end-to-end test.","owner":"Priya Shah (fictional)","dueDate":"2026-11-10","evidence":"DEMO-JIRA-1088"},
-    {"type":"Dependency","descriptionMarkdown":"Manufacturing execution system remains on premises.","impactMarkdown":"Maintain low-latency private connectivity through cutover.","owner":"Noah Brooks (fictional)","dueDate":"2027-03-01","evidence":"DEMO-ARCH-12"},
-    {"type":"Decision","descriptionMarkdown":"Choose the production database service and backup pattern.","impactMarkdown":"Decision unlocks final sizing and cost estimate.","owner":"Elena Ortiz (fictional)","dueDate":"2026-11-20","evidence":"DEMO-DEC-04"}
-  ],
   "artifacts": {
-    "charter":{"available":"Yes","link":"https://example.com/demo/ebs-charter","ownerDue":"Priya Shah, 2026-11-02"},
-    "governance":{"available":"Yes","link":"https://example.com/demo/ebs-governance","ownerDue":"Priya Shah, 2026-11-02"},
-    "currentArchitecture":{"available":"Yes","link":"https://example.com/demo/current-architecture","ownerDue":"Morgan Chen, 2026-10-23"},
-    "targetArchitecture":{"available":"Yes","link":"https://example.com/demo/target-architecture","ownerDue":"Morgan Chen, 2026-11-20"},
-    "sizing":{"available":"Yes","link":"https://example.com/demo/sizing-ramp","ownerDue":"Jordan Lee, 2026-11-20"},
-    "migration":{"available":"No","link":"https://example.com/demo/migration-plan-draft","ownerDue":"Priya Shah, 2027-02-02"},
-    "pursuit":{"available":"Yes","link":"https://example.com/demo/pursuit-handoff","ownerDue":"Jordan Lee, 2026-10-30"}
+    "charter":{"link":"https://example.com/demo/ebs-charter","owner":"Priya Shah (fictional)"},
+    "governance":{"link":"https://example.com/demo/ebs-governance","owner":"Priya Shah (fictional)"},
+    "currentArchitecture":{"link":"https://example.com/demo/current-architecture","owner":"Morgan Chen (fictional)"},
+    "targetArchitecture":{"link":"https://example.com/demo/target-architecture","owner":"Morgan Chen (fictional)"},
+    "sizing":{"link":"https://example.com/demo/sizing-ramp","owner":"Jordan Lee (fictional)"},
+    "migration":{"link":"https://example.com/demo/migration-plan-draft","owner":"Priya Shah (fictional)"},
+    "pursuit":{"link":"https://example.com/demo/pursuit-handoff","owner":"Jordan Lee (fictional)"}
   }
 }
