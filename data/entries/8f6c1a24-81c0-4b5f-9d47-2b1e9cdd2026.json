@@ -12,7 +12,6 @@
     "targetRegions": "US East (Ashburn), US Midwest (Chicago)",
     "customerLocation": "Columbus, Ohio, United States",
     "industry": "Industrial manufacturing",
-    "customerOciExperience": "Limited in-house OCI experience",
     "opportunityId": "DEMO-OPP-27041",
     "orderNumber": "DEMO-ORD-1428",
     "bookingDate": "2026-09-28",
@@ -30,8 +29,8 @@
     {"name":"Noah Brooks (fictional)","role":"Customer cloud platform owner","contact":"noah.brooks@example.com","influence":"Approves tenancy, networking, and operational handoff","notes":"Customer team has operated one small OCI analytics workload."}
   ],
   "meetings": [
-    {"dateTime":"2026-11-03T10:00","cadence":"Weekly","topic":"Architecture and blocker review","audience":"Application owner, platform owner, partner lead","notes":"30-minute review each Tuesday until the pilot exits."},
-    {"dateTime":"2027-02-16T14:00","cadence":"Biweekly","topic":"Production readiness review","audience":"Application owner, security lead, partner lead","notes":"Customer program manager owns the agenda and decisions."}
+    {"day":"Tuesday","time":"10:00 AM","timeZone":"Eastern (ET)","cadence":"Weekly","topic":"Architecture and blocker review","audience":"Application owner, platform owner, partner lead","notes":"30-minute review each Tuesday until the pilot exits."},
+    {"day":"Tuesday","time":"2:00 PM","timeZone":"Eastern (ET)","cadence":"Biweekly","topic":"Production readiness review","audience":"Application owner, security lead, partner lead","notes":"Customer program manager owns the agenda and decisions."}
   ],
   "reasons": {
     "0":{"selected":true,"executiveMandate":false,"note":"Refresh the EBS hosting platform without changing core business processes."},
@@ -52,7 +51,7 @@
     "7":{"selected":true,"note":"Align spend with the production and test environment schedule."},
     "8":{"selected":true,"note":"Tag application and environment costs separately."},
     "9":{"selected":false,"note":"Existing Oracle licenses remain in the draft licensing model."},
-    "10":{"selected":true,"note":"Exit leased facilities and retired server hardware."},
+    "10":{"selected":true,"executiveMandate":true,"note":"Exit leased facilities and retired server hardware."},
     "11":{"selected":true,"note":"Increase test capacity during release validation."},
     "12":{"selected":true,"note":"Target a four-hour RTO for the production application."},
     "13":{"selected":true,"note":"Centralize access review, logging, and encryption controls."}
@@ -104,7 +103,7 @@
     "2":{"selected":true,"note":"The order management integration spans several application tiers."},
     "3":{"selected":true,"note":"US data residency applies to order and employee records."},
     "4":{"selected":true,"note":"Customer team needs a clear monitoring and escalation model."},
-    "5":{"selected":true,"note":"Identity federation and privileged access require review."},
+    "5":{"selected":true,"executiveMandate":true,"note":"Identity federation and privileged access require review."},
     "6":{"selected":true,"note":"Cutover plan must protect open orders and support rollback."},
     "7":{"selected":true,"note":"Batch windows and month-end close are sensitive to latency."},
     "8":{"selected":true,"note":"Customer wants one dry run before production cutover."}
@@ -113,7 +112,12 @@
     {"name":"Database target design validation","category":"Compatibility","impact":"Hard requirement","status":"In progress","owner":"Morgan Chen (fictional)","eta":"2026-11-20","ticket":"DEMO-JIRA-1042","descriptionMarkdown":"Confirm the proposed Oracle Database target, EBS support position, and license assumptions before finalizing the production architecture.","nextStepMarkdown":"Pursuits architect will review the design with the database specialist and customer licensing contact."},
     {"name":"Ashburn compute capacity review","category":"Capacity","impact":"Soft requirement","status":"Open","owner":"Jordan Lee (fictional)","eta":"2026-12-04","ticket":"DEMO-CAP-441","descriptionMarkdown":"The current estimate calls for a peak of 96 OCPUs during parallel validation. Region capacity is not yet reserved.","nextStepMarkdown":"Confirm shape mix and need-by dates, then submit a capacity review request."}
   ],
-  "successMeasuresMarkdown": "1. Nonproduction EBS completes a representative month-end test with no unresolved critical defects.\n2. Production cutover meets a customer-approved outage window of eight hours.\n3. The customer validates order creation, receiving, and finance posting after cutover.\n4. Platform team accepts monitoring, backup, and incident ownership.",
+  "successMeasures": [
+    {"name":"Nonproduction month-end validation","shortDescription":"EBS completes a representative month-end cycle with no unresolved critical defects.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Open critical defects after the month-end test","targetGoal":"0 critical defects"},
+    {"name":"Production cutover window","shortDescription":"The customer-led cutover finishes within the approved outage window.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Elapsed production outage during cutover","targetGoal":"8 hours or less"},
+    {"name":"Business process acceptance","shortDescription":"Business owners validate order creation, receiving, and finance posting after cutover.","impactsGoNoGo":"Yes","isMeasurableMetric":"No"},
+    {"name":"Operations handoff","shortDescription":"The platform team accepts monitoring, backup, and incident ownership.","impactsGoNoGo":"No","isMeasurableMetric":"No"}
+  ],
   "assessment": {
     "applications":{"currentState":"EBS 12.2 application tier on 14 Linux VMs.","targetState":"OCI Compute application tier across two availability domains where available.","requirements":"Review custom extensions, interface endpoints, and supported software versions.","gaps":"Complete partner inventory of custom concurrent programs.","customerOwner":"Elena Ortiz (fictional)"},
     "data":{"currentState":"Oracle Database 19c, 22 TB allocated storage, nightly RMAN backups.","targetState":"Proposed Oracle Base Database Service with encrypted backups in Object Storage.","requirements":"Validate throughput, backup retention, licensing, and data transfer sequence.","gaps":"Finalize database service selection and validated production sizing.","customerOwner":"Noah Brooks (fictional)"},
