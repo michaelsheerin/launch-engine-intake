@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "a6ac50b7-6364-416e-929a-158e58532711",
   "createdAt": "2026-10-08T03:08:32.667Z",
-  "updatedAt": "2026-10-08T03:08:32.667Z",
+  "updatedAt": "2026-10-08T14:40:09.000Z",
   "createdBy": "michaelsheerin",
   "updatedBy": "michaelsheerin",
   "profile": {
@@ -34,29 +34,16 @@
   ],
   "reasons": {
     "0":{"selected":true,"executiveMandate":false,"note":"Refresh the EBS hosting platform without changing core business processes."},
-    "1":{"selected":true,"executiveMandate":false,"note":"Support a new distribution center and higher order volume."},
     "2":{"selected":true,"executiveMandate":true,"note":"**Executive deadline:** Ohio data center lease ends in June 2027."},
-    "3":{"selected":true,"executiveMandate":false,"note":"Hardware support renewal is due in July 2027."},
-    "4":{"selected":false,"executiveMandate":false,"note":"No merger or acquisition drives this program."}
+    "3":{"selected":true,"executiveMandate":false,"note":"Hardware support renewal is due in July 2027."}
   },
-  "reasonOtherMarkdown": "Reduce recovery time after regional facility incidents.",
+  "reasonOtherMarkdown": "",
   "goals": {
     "0":{"selected":true,"note":"Modernize hosting while keeping EBS release 12.2."},
-    "1":{"selected":true,"note":"Support two planned distribution sites."},
-    "2":{"selected":true,"note":"Use OCI Compute, Database, and Object Storage."},
-    "3":{"selected":true,"note":"Pursuits estimate targets a lower five-year infrastructure run rate."},
-    "4":{"selected":true,"note":"Reduce lead time for nonproduction environments."},
     "5":{"selected":true,"note":"Improve recovery capability for order management."},
-    "6":{"selected":true,"note":"Provision test capacity ahead of quarterly release cycles."},
-    "7":{"selected":true,"note":"Align spend with the production and test environment schedule."},
-    "8":{"selected":true,"note":"Tag application and environment costs separately."},
-    "9":{"selected":false,"note":"Existing Oracle licenses remain in the draft licensing model."},
-    "10":{"selected":true,"executiveMandate":true,"note":"Exit leased facilities and retired server hardware."},
-    "11":{"selected":true,"note":"Increase test capacity during release validation."},
-    "12":{"selected":true,"note":"Target a four-hour RTO for the production application."},
-    "13":{"selected":true,"note":"Centralize access review, logging, and encryption controls."}
+    "12":{"selected":true,"note":"Target a four-hour RTO for the production application."}
   },
-  "goalOtherMarkdown": "- Validate repeatable cloning of nonproduction EBS environments.\n- Hand a documented operating model to Cedar Vale's platform team.",
+  "goalOtherMarkdown": "",
   "workloads": [
     {
       "name":"EBS production application and database",
@@ -98,15 +85,10 @@
   ],
   "concerns": {
     "0":{"selected":true,"note":"Custom EBS extensions need dependency testing."},
-    "1":{"selected":true,"note":"Legacy storage mounts must be mapped to OCI equivalents."},
-    "2":{"selected":true,"note":"The order management integration spans several application tiers."},
-    "3":{"selected":true,"note":"US data residency applies to order and employee records."},
-    "4":{"selected":true,"note":"Customer team needs a clear monitoring and escalation model."},
     "5":{"selected":true,"executiveMandate":true,"note":"Identity federation and privileged access require review."},
-    "6":{"selected":true,"note":"Cutover plan must protect open orders and support rollback."},
-    "7":{"selected":true,"note":"Batch windows and month-end close are sensitive to latency."}
+    "6":{"selected":true,"note":"Cutover plan must protect open orders and support rollback."}
   },
-  "concernOtherMarkdown":"Customer wants one dry run before production cutover.",
+  "concernOtherMarkdown":"",
   "blockers": [
     {"name":"Database target design validation","category":"Compatibility","impact":"Hard requirement","owner":"Morgan Chen (fictional)","eta":"2026-11-20","ticket":"DEMO-JIRA-1042","descriptionMarkdown":"Confirm the proposed Oracle Database target, EBS support position, and license assumptions before finalizing the production architecture.","nextStepMarkdown":"Pursuits architect will review the design with the database specialist and customer licensing contact."},
     {"name":"Ashburn compute capacity review","category":"Capacity","impact":"Soft requirement","owner":"Jordan Lee (fictional)","eta":"2026-12-04","ticket":"DEMO-CAP-441","descriptionMarkdown":"The current estimate calls for a peak of 96 OCPUs during parallel validation. Region capacity is not yet reserved.","nextStepMarkdown":"Confirm shape mix and need-by dates, then submit a capacity review request."}
@@ -114,8 +96,7 @@
   "successMeasures": [
     {"name":"Nonproduction month-end validation","shortDescription":"EBS completes a representative month-end cycle with no unresolved critical defects.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Open critical defects after the month-end test","targetGoal":"0 critical defects"},
     {"name":"Production cutover window","shortDescription":"The customer-led cutover finishes within the approved outage window.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Elapsed production outage during cutover","targetGoal":"8 hours or less"},
-    {"name":"Business process acceptance","shortDescription":"Business owners validate order creation, receiving, and finance posting after cutover.","impactsGoNoGo":"Yes","isMeasurableMetric":"No"},
-    {"name":"Operations handoff","shortDescription":"The platform team accepts monitoring, backup, and incident ownership.","impactsGoNoGo":"No","isMeasurableMetric":"No"}
+    {"name":"Business process acceptance","shortDescription":"Business owners validate order creation, receiving, and finance posting after cutover.","impactsGoNoGo":"Yes","isMeasurableMetric":"No"}
   ],
   "assessment": {
     "applications":{"currentState":"EBS 12.2 application tier on 14 Linux VMs.","targetState":"OCI Compute application tier across two availability domains where available.","requirements":"Review custom extensions, interface endpoints, and supported software versions.","gaps":"Complete partner inventory of custom concurrent programs.","customerOwner":"Elena Ortiz (fictional)","architectureDiagram":"https://example.com/demo/architecture/applications"},

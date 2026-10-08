@@ -121,3 +121,62 @@ main{padding:0 0 72px}
 @media(max-width:760px){.service-categories .choice-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.readiness-table .choice-table-row{grid-template-columns:1fr}.readiness-table .choice-check,.readiness-table .readiness-owner-field{grid-column:1/-1}}
 @media(max-width:760px){.artifact-table .choice-table-row{grid-template-columns:1fr}.artifact-table .artifact-input-field{grid-column:1/-1}}
+
+/* Submitted entry: compact tables with visible section boundaries. */
+.record-section{border:1px solid #cbd8e5;border-left:0;padding:0;margin:24px 0 32px;background:#fff}
+.record-section>h2{margin:0;padding:17px 22px;background:var(--blue);color:#fff;font-size:20px;line-height:1.3;letter-spacing:-.01em}
+.record-subsection{margin:20px;border:1px solid #d2dce6;background:#fff}
+.record-subsection>h3{margin:0;padding:11px 15px;border-bottom:1px solid #d2dce6;border-left:5px solid #527ca8;background:#eaf1f8;color:var(--blue);font-size:16px;line-height:1.35}
+.record-subsection>.record-table-wrap,.record-subsection>.record-entity,.record-subsection>.record-empty,.record-subsection>.record-description{margin:16px}
+.record-subsection>.record-entity+.record-entity{margin-top:18px}
+.record-subsection.scope-in>h3{border-left-color:#307d8b;background:#e8f3f5}
+.record-subsection.scope-out>h3{border-left-color:#9a731d;background:#fff6e5}
+.record-subsection.scope-risks>h3{border-left-color:#a46d2e;background:#fff5ea}
+.record-subsection.scope-blockers{border-color:#dfc4c4}
+.record-subsection.scope-blockers>h3{border-left-color:#a52828;border-bottom-color:#dfc4c4;background:#fff0f0;color:#812323}
+.record-table-wrap{border-radius:3px;max-width:100%}
+.record-table{width:100%;min-width:680px;border-collapse:collapse;font-size:14px;line-height:1.45}
+.record-table th,.record-table td{padding:10px 12px;border-bottom:1px solid #dce3eb;border-right:1px solid #edf1f5;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.record-table th:last-child,.record-table td:last-child{border-right:0}
+.record-table tbody tr:last-child>*{border-bottom:0}
+.record-table thead th{background:#edf3f8;color:var(--blue);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.055em;white-space:normal}
+.record-table tbody th{font-weight:650;color:var(--ink)}
+.record-table tbody tr:nth-child(even){background:#fafcfe}
+.record-table .markdown-body p{margin:0 0 6px}
+.record-table .markdown-body p:last-child{margin-bottom:0}
+.record-table .markdown-body ul,.record-table .markdown-body ol{margin:4px 0;padding-left:19px}
+.record-table a{overflow-wrap:anywhere}
+.record-profile-table{min-width:760px;table-layout:fixed}
+.record-profile-table td{width:33.333%;padding:13px 15px}
+.record-field-label{display:block;margin-bottom:4px;color:#52677f;font-size:11px;font-weight:750;letter-spacing:.055em;text-transform:uppercase}
+.record-description{margin:20px;border:1px solid #d2dce6;background:#fbfcfe}
+.record-description>h3,.record-description>h4{margin:0;padding:10px 14px;background:#eaf1f8;color:var(--blue);border-bottom:1px solid #d2dce6;font-size:15px}
+.record-description>.markdown-body,.record-description>.record-blank{display:block;padding:16px;line-height:1.6}
+.record-description .markdown-body h1,.record-description .markdown-body h2,.record-description .markdown-body h3{margin:0 0 8px;color:var(--blue);font-size:16px}
+.record-contacts{min-width:850px}
+.record-meetings{min-width:900px;table-layout:fixed}
+.record-meetings th:nth-child(1),.record-meetings td:nth-child(1){width:24%}
+.record-meetings th:nth-child(2),.record-meetings td:nth-child(2){width:11%;white-space:nowrap;overflow-wrap:normal}
+.record-meetings th:nth-child(3),.record-meetings td:nth-child(3){width:20%}
+.record-meetings th:nth-child(4),.record-meetings td:nth-child(4){width:23%}
+.record-meetings th:nth-child(5),.record-meetings td:nth-child(5){width:22%}
+.record-choice-table{min-width:940px}
+.record-choice-table td:last-child{min-width:260px}
+.record-choice-table .record-category{color:#52677f;font-size:12px;font-weight:650;min-width:110px}
+.record-success{min-width:920px}
+.record-exclusions{min-width:830px}
+.record-status{text-align:center!important;font-weight:700;white-space:nowrap;color:var(--blue)}
+.record-blank{color:#778494;font-style:italic;font-weight:400}
+.record-empty{color:#6a7787;text-align:left;padding:14px 16px}
+.record-entity{border:1px solid #cddae7;background:#fff}
+.record-entity>h4{margin:0;padding:11px 14px;background:#f0f5fa;border-bottom:1px solid #cddae7;color:var(--blue);font-size:15px;line-height:1.35}
+.record-entity>.record-table-wrap{border:0}
+.scope-in .record-entity{border-left:4px solid #307d8b}
+.scope-out .record-table tbody th{color:#71510d}
+.scope-blockers .record-entity{border-left:4px solid #a52828;border-color:#e0c8c8}
+.scope-blockers .record-entity>h4{background:#fff5f5;border-bottom-color:#e0c8c8;color:#812323}
+.record-matrix{min-width:0;table-layout:fixed}
+.record-matrix th{width:31%;background:#f6f8fb;color:#41566d!important;font-size:12px;font-weight:700!important;text-transform:none;letter-spacing:0}
+.record-matrix td{width:69%}
+.readiness-view,.artifact-view{min-width:820px}
+@media(max-width:760px){.record-section{margin:20px 0 26px}.record-section>h2{padding:15px 16px;font-size:18px}.record-subsection{margin:13px}.record-subsection>.record-table-wrap,.record-subsection>.record-entity,.record-subsection>.record-empty,.record-subsection>.record-description{margin:10px}.record-description{margin:13px}.record-table th,.record-table td{padding:9px 10px}.record-matrix{min-width:0}.record-matrix th{width:35%}.record-matrix td{width:65%}}

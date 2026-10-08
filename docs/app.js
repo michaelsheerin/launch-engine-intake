@@ -325,45 +325,71 @@ function detailLink(label, value) {
   if (!value) return '';
   return `<div class="detail"><dt>${esc(label)}</dt><dd>${linkText(value)}</dd></div>`;
 }
-function detailPanel(title, body) { return body ? `<section class="panel record-section"><h2>${esc(title)}</h2>${body}</section>` : ''; }
-function cards(items, render) { return items?.length ? `<div class="item-list">${items.map((item,i)=>`<div class="item-card">${render(item,i)}</div>`).join('')}</div>` : ''; }
-function selectedRows(object, labels, mandate=false) {
-  return labels.map((label,i) => {
-    const item = object?.[i]; if (!item?.selected && !item?.note && !item?.executiveMandate) return '';
-    return `<div class="item-card"><span class="tag">${esc(titleCaseLabel(label))}</span>${!item?.selected ? '<span class="tag tag-muted">Not selected</span>' : ''}${mandate && item?.executiveMandate ? '<span class="tag">Executive mandate</span>' : ''}${item?.note ? `<div class="markdown-body">${renderMarkdown(item.note)}</div>` : ''}</div>`;
-  }).join('');
+function recordValue(value, markdown=false) {
+  if (value == null || value === '') return '<span class="record-blank">Not provided</span>';
+  return markdown ? `<div class="markdown-body">${renderMarkdown(value)}</div>` : valueText(value);
+}
+function recordTable(headers, rows, className='') {
+  const body = rows.length ? rows.join('') : `<tr><td class="record-empty" colspan="${headers.length}">No information provided.</td></tr>`;
+  return `<div class="table-wrap record-table-wrap"><table class="record-table ${className}">${headers.length ? `<thead><tr>${headers.map(label=>`<th scope="col">${esc(label)}</th>`).join('')}</tr></thead>` : ''}<tbody>${body}</tbody></table></div>`;
+}
+function recordSubsection(title, body, tone='') {
+  return `<section class="record-subsection ${tone}"><h3>${esc(title)}</h3>${body}</section>`;
+}
+function recordPanel(title, body) {
+  return `<section class="panel record-section"><h2>${esc(title)}</h2>${body}</section>`;
+}
+function matrix(rows) {
+  return `<div class="table-wrap record-table-wrap"><table class="record-table record-matrix"><tbody>${rows.map(([label,value,markdown=false,link=false])=>`<tr><th scope="row">${esc(label)}</th><td>${link ? linkText(value) || recordValue('') : recordValue(value,markdown)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+function choiceTable(object, choices, otherMarkdown='', withCategory=false) {
+  const rows = choices.map(({label,category,index})=>{
+    const item=object?.[index];
+    if (!item?.selected && !item?.note && !item?.executiveMandate) return '';
+    const cells=[withCategory ? `<td class="record-category">${esc(category)}</td>` : '',`<th scope="row">${esc(titleCaseLabel(label))}</th>`,`<td class="record-status">${item.selected ? 'Yes' : 'No'}</td>`,`<td class="record-status">${item.executiveMandate ? 'Yes' : 'No'}</td>`,`<td>${recordValue(item.note,true)}</td>`];
+    return `<tr>${cells.join('')}</tr>`;
+  }).filter(Boolean);
+  if (otherMarkdown) rows.push(`<tr>${withCategory ? '<td class="record-category">Other</td>' : ''}<th scope="row">Other</th><td class="record-status">Yes</td><td class="record-status">No</td><td>${recordValue(otherMarkdown,true)}</td></tr>`);
+  return recordTable([...(withCategory?['Category']:[]),'Label','Applies to This Migration?','Executive Mandate?','Notes and More Details'],rows,'record-choice-table');
 }
 function recordBody(record) {
-  const p = record.profile || {};
-  const profile = `<div class="detail-grid">${[
-    detail('Account Name',p.customerOrganization),detail('Workload Name',p.workloadName),detail('Engagement Type',p.engagementType === 'Other' && p.engagementTypeOther ? `Other: ${p.engagementTypeOther}` : p.engagementType),
-    detail('Target OCI Regions',p.targetRegions),detail('Customer Location',p.customerLocation),detail('Industry',p.industry),
-    detail('Opp ID',p.opportunityId),detail('Order #',p.orderNumber),detail('Booking Date',p.bookingDate),
-    detail('Account Exec',p.accountExecutive),detail('Oracle Delivery Lead',p.oracleDeliveryLead),
-    detail('Solution Architect',p.solutionArchitect),detail('Implementation Partner',p.implementationPartner),
-    detail('Target Go-Live',p.targetGoLive),detail('Planned Workload Start',p.plannedStart),
-    detail('Description',record.summaryMarkdown,true)
-  ].join('')}</div>`;
-  const people = cards(record.stakeholders,(v,i)=>`<h3>Contact ${i+1}</h3><div class="detail-grid">${detail('Name',v.name)}${detail('Role',v.role)}${detail('Email or Contact Info',v.contact)}${detail('Influence on Workload',v.influence)}${detail('Additional Notes',v.notes)}</div>`);
-  const meetings = cards(record.meetings,(v,i)=>`<h3>Cadence Call ${i+1}</h3><div class="detail-grid">${detail('Day',v.day)}${detail('Time',v.time)}${detail('Time Zone',v.timeZone === 'Other' && v.timeZoneOther ? `Other: ${v.timeZoneOther}` : v.timeZone)}${!v.day && !v.time ? detail('Prior Date and Time',v.dateTime) : ''}${detail('Cadence',v.cadence === 'Other' && v.cadenceOther ? `Other: ${v.cadenceOther}` : v.cadence)}${detail('Topic',v.topic)}${detail('Customer Audience',v.audience)}${detail('Additional Notes',v.notes)}</div>`);
-  const reasons = selectedRows(record.reasons,REASONS,true);
-  const goals = selectedRows(record.goals,goalOptions(),true);
-  const success = cards(record.successMeasures,(v,i)=>`<h3>${esc(v.name || `Success Measure ${i+1}`)}</h3><div class="detail-grid">${detail('Short Description',v.shortDescription)}${detail('Impacts Go/No-Go',v.impactsGoNoGo)}${detail('Measurable Metric',v.isMeasurableMetric)}${v.isMeasurableMetric==='Yes'?detail('Metric Description',v.metricDescription)+detail('Target Goal',v.targetGoal):''}</div>`);
-  const outcomes = `${reasons ? `<h3>Reasons to Migrate</h3>${reasons}` : ''}${record.reasonOtherMarkdown ? `<h3>Other Reason to Migrate</h3><div class="markdown-body">${renderMarkdown(record.reasonOtherMarkdown)}</div>` : ''}${goals ? `<h3>Goals and Improvements</h3>${goals}` : ''}${record.goalOtherMarkdown ? `<h3>Other Goal</h3><div class="markdown-body">${renderMarkdown(record.goalOtherMarkdown)}</div>` : ''}${success ? `<h3>Success Measures</h3>${success}` : ''}${record.successMeasuresMarkdown ? `<h3>Earlier Success Measures</h3><div class="markdown-body">${renderMarkdown(record.successMeasuresMarkdown)}</div>` : ''}`;
-  const workloads = cards(record.workloads,(v,i)=>`<h3>${esc(v.name || `Workload ${i+1}`)}</h3><div class="detail-grid">${detail('Migration Approach',v.disposition)}${detail('Line-of-Business',v.businessUnits)}${detail('Description',v.descriptionMarkdown,true)}${detail('Application Name and Vendor',v.applicationVendor)}${detail('Application Use',v.applicationUse === 'Other' && v.applicationUseOther ? `Other: ${v.applicationUseOther}` : v.applicationUse)}${detail('Application Type',v.applicationType)}${detail('Current Tech Stack',v.sourceTechnologies,true)}${detail('Planned Migration Phase',v.migrationWave)}${detail('Estimated Start Date',v.eta)}${detail('Customer Owner',v.customerOwner)}${detail('Target OCI Service Categories',(v.serviceCategories||[]).join(', '))}${detail('Other OCI Services Planned',v.otherOciServicesMarkdown,true)}${detail('Additional Considerations or Technical Dependencies',v.considerationsMarkdown,true)}</div>`);
-  const exclusions = cards(record.exclusions,(v,i)=>`<h3>${esc(v.item || `Out-of-scope item ${i+1}`)}</h3><div class="detail-grid">${detail('Planned for Future Phase?',v.futurePhase)}${v.futurePhase==='Yes'?detail('Estimated Target Date',v.estimatedTargetDate):''}${detail('Exclusion Reasoning',v.description)}${detail('Future Assumptions to Consider',v.assumptions)}</div>`);
-  const concerns = selectedRows(record.concerns,CONCERNS,true);
-  const blockers = cards(record.blockers,(v,i)=>`<h3>${esc(v.name || `Blocker ${i+1}`)}</h3><div class="detail-grid">${detail('Category',v.category === 'Other' && v.categoryOther ? `Other: ${v.categoryOther}` : v.category)}${detail('Impact',v.impact)}${detail('Short Description',v.descriptionMarkdown,true)}${detail('PM or Owner',v.owner)}${detail('Ticket ID or Link',v.ticket)}${detail('Resolution ETA',v.eta)}${detail('Next Steps',v.nextStepMarkdown,true)}</div>`);
-  const assessment = ASSESSMENT.map(([key,label])=>{const v=record.assessment?.[key]||{};const d=[detail('Current State',v.currentState,true,true),detail('Target State',v.targetState,true,true),detail('Technical Requirements or Dependencies',v.requirements,true,true),detail('Gaps or Decisions Needed',v.gaps,true,true),detail('Customer Owner',v.customerOwner),detailLink('Link to Architecture Diagram',v.architectureDiagram)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
-  const readinessRows = READINESS.map(([key,label])=>{const v=record.readiness?.[key]||{};const complete=v.status === 'Complete' || v.status === true ? 'Yes' : v.status === 'Open' || v.status === false ? 'No' : v.status || '';return `<tr><th scope="row">${esc(label)}</th><td>${esc(complete)}</td><td>${valueText(v.owner)}</td><td class="markdown-body">${renderMarkdown(v.evidenceMarkdown)}</td></tr>`;}).join('');
-  const readiness = `<div class="table-wrap"><table class="catalog-table readiness-view"><thead><tr><th>OCI Foundation Element</th><th>Complete?</th><th>Owner</th><th>Requirement</th></tr></thead><tbody>${readinessRows}</tbody></table></div>`;
-  const artifactRows = ARTIFACTS.map(([key,label])=>{const v=record.artifacts?.[key]||{};return `<tr><th scope="row">${esc(label)}</th><td>${linkText(v.link)}</td><td>${valueText(artifactOwner(v))}</td></tr>`;}).join('');
-  const artifacts = `<div class="table-wrap"><table class="catalog-table artifact-view"><thead><tr><th>Artifact</th><th>Location / Link</th><th>Owner</th></tr></thead><tbody>${artifactRows}</tbody></table></div>`;
+  const p=record.profile || {};
+  const profileFields=[
+    [['Account Name',p.customerOrganization],['Workload Name',p.workloadName],['Engagement Type',p.engagementType==='Other'&&p.engagementTypeOther?`Other: ${p.engagementTypeOther}`:p.engagementType]],
+    [['Target OCI Regions',p.targetRegions],['Customer Location',p.customerLocation],['Industry',p.industry]],
+    [['Opp ID',p.opportunityId],['Order #',p.orderNumber],['Booking Date',p.bookingDate]],
+    [['Account Exec',p.accountExecutive],['Oracle Delivery Lead',p.oracleDeliveryLead],['Solution Architect',p.solutionArchitect]],
+    [['Implementation Partner',p.implementationPartner],['Target Go-Live',p.targetGoLive],['Planned Workload Start',p.plannedStart]]
+  ];
+  const profileRows=profileFields.map(group=>`<tr>${group.map(([label,value])=>`<td><span class="record-field-label">${esc(label)}</span><div>${recordValue(value)}</div></td>`).join('')}</tr>`);
+  const profile=`${recordTable([],profileRows,'record-profile-table')}<div class="record-description"><h3>Description</h3>${recordValue(record.summaryMarkdown,true)}</div>`;
+
+  const contacts=(record.stakeholders||[]).map(v=>`<tr><th scope="row">${recordValue(v.name)}</th><td>${recordValue(v.role)}</td><td>${recordValue(v.contact)}</td><td>${recordValue(v.influence)}</td><td>${recordValue(v.notes)}</td></tr>`);
+  const meetings=(record.meetings||[]).map(v=>{const zone=v.timeZone==='Other'&&v.timeZoneOther?`Other: ${v.timeZoneOther}`:v.timeZone;const schedule=[v.day||v.dateTime,v.time,zone].filter(Boolean).join(' · ');return `<tr><td>${recordValue(schedule)}</td><td>${recordValue(v.cadence==='Other'&&v.cadenceOther?`Other: ${v.cadenceOther}`:v.cadence)}</td><th scope="row">${recordValue(v.topic)}</th><td>${recordValue(v.audience)}</td><td>${recordValue(v.notes)}</td></tr>`;});
+  const people=recordSubsection('Key Customer Contacts',recordTable(['Name','Role','Email or Contact Info','Influence on Workload','Additional Notes'],contacts,'record-contacts'))+recordSubsection('Customer Cadence Calls',recordTable(['Day, Time, and Time Zone','Cadence','Topic','Customer Audience','Additional Notes'],meetings,'record-meetings'));
+
+  const reasonChoices=REASONS.slice(0,-1).map((label,index)=>({label,index}));
+  const goalChoices=Object.entries(GOALS).flatMap(([category,labels])=>labels.map(label=>({category,label}))).map((item,index)=>({...item,index}));
+  const concernChoices=CONCERNS.slice(0,-1).map((label,index)=>({label,index}));
+  const successRows=(record.successMeasures||[]).map((v,i)=>`<tr><th scope="row">${recordValue(v.name||`Success Measure ${i+1}`)}</th><td>${recordValue(v.shortDescription)}</td><td class="record-status">${recordValue(v.impactsGoNoGo)}</td><td class="record-status">${recordValue(v.isMeasurableMetric)}</td><td>${v.isMeasurableMetric==='Yes'?recordValue(v.metricDescription):'<span class="record-blank">Not applicable</span>'}</td><td>${v.isMeasurableMetric==='Yes'?recordValue(v.targetGoal):'<span class="record-blank">Not applicable</span>'}</td></tr>`);
+  const outcomes=recordSubsection('Reasons to Migrate',choiceTable(record.reasons,reasonChoices,record.reasonOtherMarkdown))+recordSubsection('Goals and Improvements',choiceTable(record.goals,goalChoices,record.goalOtherMarkdown,true))+recordSubsection('Success Measures',recordTable(['Success Measure Name','Short Description','Go/No-Go?','Measurable?','Metric Description','Target Goal'],successRows,'record-success')+(record.successMeasuresMarkdown?`<div class="record-description"><h4>Earlier Success Measures</h4>${recordValue(record.successMeasuresMarkdown,true)}</div>`:''));
+
+  const workloads=(record.workloads||[]).map((v,i)=>`<article class="record-entity"><h4>${esc(v.name||`Workload ${i+1}`)}</h4>${matrix([['Migration Approach',v.disposition],['Line-of-Business',v.businessUnits],['Description',v.descriptionMarkdown,true],['Application Name and Vendor',v.applicationVendor],['Application Use',v.applicationUse==='Other'&&v.applicationUseOther?`Other: ${v.applicationUseOther}`:v.applicationUse],['Application Type',v.applicationType],['Current Tech Stack',v.sourceTechnologies],['Planned Migration Phase',v.migrationWave],['Estimated Start Date',v.eta],['Customer Owner',v.customerOwner],['Target OCI Service Categories',(v.serviceCategories||[]).join(', ')],['Other OCI Services Planned',v.otherOciServicesMarkdown,true],['Additional Considerations or Technical Dependencies',v.considerationsMarkdown,true]])}</article>`).join('')||'<p class="record-empty">No in-scope workloads entered.</p>';
+  const exclusions=(record.exclusions||[]).map(v=>`<tr><th scope="row">${recordValue(v.item)}</th><td class="record-status">${recordValue(v.futurePhase)}</td><td>${v.futurePhase==='Yes'?recordValue(v.estimatedTargetDate):'<span class="record-blank">Not applicable</span>'}</td><td>${recordValue(v.description)}</td><td>${recordValue(v.assumptions)}</td></tr>`);
+  const blockers=(record.blockers||[]).map((v,i)=>`<article class="record-entity"><h4>${esc(v.name||`Blocker ${i+1}`)}</h4>${matrix([['Category',v.category==='Other'&&v.categoryOther?`Other: ${v.categoryOther}`:v.category],['Impact',v.impact],['Short Description',v.descriptionMarkdown,true],['PM or Owner',v.owner],['Ticket ID or Link',v.ticket],['Resolution ETA',v.eta],['Next Steps',v.nextStepMarkdown,true]])}</article>`).join('')||'<p class="record-empty">No blockers entered.</p>';
+  const plan=recordSubsection('In-Scope Workloads',workloads,'scope-in')+recordSubsection('Out-of-Scope Items',recordTable(['Title','Future Phase?','Estimated Target Date','Exclusion Reasoning','Future Assumptions to Consider'],exclusions,'record-exclusions'),'scope-out')+recordSubsection('Challenges and Risks',choiceTable(record.concerns,concernChoices,record.concernOtherMarkdown),'scope-risks')+recordSubsection('Blockers',blockers,'scope-blockers');
+
+  const assessment=ASSESSMENT.map(([key,label])=>{const v=record.assessment?.[key]||{};return recordSubsection(label,matrix([['Current State',v.currentState,true],['Target State',v.targetState,true],['Technical Requirements or Dependencies',v.requirements,true],['Gaps or Decisions Needed',v.gaps,true],['Customer Owner',v.customerOwner],['Link to Architecture Diagram',v.architectureDiagram,false,true]]));}).join('');
+  const readinessRows=READINESS.map(([key,label])=>{const v=record.readiness?.[key]||{};const complete=v.status==='Complete'||v.status===true?'Yes':v.status==='Open'||v.status===false?'No':v.status||'';return `<tr><th scope="row">${esc(label)}</th><td class="record-status">${recordValue(complete)}</td><td>${recordValue(v.owner)}</td><td>${recordValue(v.evidenceMarkdown,true)}</td></tr>`;});
+  const artifactsRows=ARTIFACTS.map(([key,label])=>{const v=record.artifacts?.[key]||{};return `<tr><th scope="row">${esc(label)}</th><td>${linkText(v.link)||recordValue('')}</td><td>${recordValue(artifactOwner(v))}</td></tr>`;});
   return [
-    detailPanel('1. Workload Profile',profile), detailPanel('2. People and Meetings',`${people ? `<h3>Key Customer Contacts</h3>${people}` : ''}${meetings ? `<h3>Customer Cadence Calls</h3>${meetings}` : ''}`),
-    detailPanel('3. Business Case and Success',outcomes), detailPanel('4. Workloads and Migration Plan',`${workloads}${exclusions}${concerns ? `<h3>Challenges and Risks</h3>${concerns}` : ''}${record.concernOtherMarkdown ? `<h3>Other Challenge or Risk</h3><div class="markdown-body">${renderMarkdown(record.concernOtherMarkdown)}</div>` : ''}${blockers}`),
-    detailPanel('5. Current and Target State Assessment',assessment), detailPanel('6. OCI Foundation Readiness',readiness),
-    detailPanel('7. Artifact Links',artifacts)
+    recordPanel('1. Workload Profile',profile),
+    recordPanel('2. People and Meetings',people),
+    recordPanel('3. Business Case and Success',outcomes),
+    recordPanel('4. Workloads and Migration Plan',plan),
+    recordPanel('5. Current and Target State Assessment',assessment),
+    recordPanel('6. OCI Foundation Readiness',recordTable(['OCI Foundation Element','Complete?','Owner','Requirement'],readinessRows,'readiness-view')),
+    recordPanel('7. Artifact Links',recordTable(['Artifact','Location / Link','Owner'],artifactsRows,'artifact-view'))
   ].join('');
 }
 
