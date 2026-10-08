@@ -9,9 +9,9 @@ body{background:#fff;overflow-x:clip}
 .shell{width:min(1120px,calc(100% - 40px))}
 .site-header{box-shadow:0 1px 0 rgba(23,54,93,.04)}
 .header-inner{min-height:72px}
-.brand{font-size:15px;letter-spacing:-.01em}
-.brand strong{font-weight:750}
-.brand small{font-size:12px;margin-top:2px}
+.brand{font-family:"Aptos Display","Segoe UI Variable Display","Segoe UI",Arial,sans-serif;line-height:1.1;letter-spacing:-.035em}
+.brand-title{display:block;color:#142b46;font-size:clamp(19px,2vw,23px);font-weight:750;white-space:nowrap}
+.brand-title span{color:#286494;font-weight:800}
 .top-nav{gap:24px}
 .top-nav a{color:#425267;font-size:14px}
 .top-nav a.active{box-shadow:none;color:var(--blue)}
