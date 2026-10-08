@@ -395,7 +395,7 @@ async function publicRead(path) {
   const files=await response.json();
   const entries=await Promise.all(files.filter(file=>file.type==='file'&&file.name.endsWith('.json')).map(async file=>{
     const {entry}=await publicRead(`/api/entries/${file.name.slice(0,-5)}`);
-    return {id:entry.id,customerOrganization:entry.profile?.customerOrganization||'',workloadName:entry.profile?.workloadName||entry.workloads?.[0]?.name||'',engagementType:entry.profile?.engagementType||'',targetRegions:entry.profile?.targetRegions||'',targetGoLive:entry.profile?.targetGoLive||'',updatedAt:entry.updatedAt||''};
+    return {id:entry.id,customerOrganization:entry.profile?.customerOrganization||'',workloadName:entry.profile?.workloadName||entry.workloads?.[0]?.name||'',engagementType:entry.profile?.engagementType||'',solutionArchitect:entry.profile?.solutionArchitect||'',targetRegions:entry.profile?.targetRegions||'',targetGoLive:entry.profile?.targetGoLive||'',updatedAt:entry.updatedAt||''};
   }));
   return {entries:entries.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))};
 }
@@ -413,9 +413,14 @@ async function updateAuth() {
 async function catalog() {
   app.innerHTML=`<div class="page-heading catalog-hero"><div><p class="eyebrow">Launch Engine Workload Catalog</p><h1>Workload handoffs in one place.</h1><p>Review proposed OCI launches and migrations. Open an entry for the full handoff details.</p></div><a class="button" href="#/new">Create an Entry</a></div><section class="catalog-content"><div class="section-title"><p class="eyebrow">Browse Entries</p><h2>Workload Catalog</h2></div><div class="panel loading-card"><div class="loading">Loading entries…</div></div></section>`;
   try {
-    const {entries}=await api('/api/entries');
-    const rows=entries.map(entry=>`<tr><td><a href="#/entry/${encodeURIComponent(entry.id)}">${esc(entry.workloadName || 'Untitled entry')}</a></td><td>${esc(entry.customerOrganization || '—')}</td><td>${esc(entry.engagementType || '—')}</td><td>${esc(entry.targetRegions || '—')}</td><td>${esc(entry.targetGoLive || '—')}</td><td>${esc((entry.updatedAt||'').slice(0,10))}</td></tr>`).join('');
-    app.querySelector('.loading-card').innerHTML=`<div class="toolbar"><span class="count" id="entry-count">${entries.length} ${entries.length===1?'entry':'entries'}</span><label class="search"><span class="sr-only">Search entries</span><input id="catalog-search" type="search" placeholder="Search account or workload"></label></div><div class="table-wrap"><table class="catalog-table"><thead><tr><th>Workload</th><th>Account</th><th>Type</th><th>OCI Region</th><th>Target Go-Live</th><th>Updated</th></tr></thead><tbody>${rows || `<tr><td colspan="6" class="empty">No entries yet. Start with a new intake.</td></tr>`}</tbody></table></div>`;
+    const {entries:listed}=await api('/api/entries');
+    const entries=await Promise.all(listed.map(async entry=>{
+      if ('solutionArchitect' in entry) return entry;
+      try {const full=await publicRead(`/api/entries/${entry.id}`);return {...entry,solutionArchitect:full.entry.profile?.solutionArchitect||''};}
+      catch {return {...entry,solutionArchitect:''};}
+    }));
+    const rows=entries.map(entry=>`<tr><td>${esc(entry.customerOrganization || '—')}</td><td><a href="#/entry/${encodeURIComponent(entry.id)}">${esc(entry.workloadName || 'Untitled entry')}</a></td><td>${esc(entry.engagementType || '—')}</td><td>${esc(entry.solutionArchitect || '—')}</td><td>${esc(entry.targetGoLive || '—')}</td></tr>`).join('');
+    app.querySelector('.loading-card').innerHTML=`<div class="toolbar"><span class="count" id="entry-count">${entries.length} ${entries.length===1?'entry':'entries'}</span><label class="search"><span class="sr-only">Search entries</span><input id="catalog-search" type="search" placeholder="Search catalog"></label></div><div class="table-wrap"><table class="catalog-table catalog-summary"><thead><tr><th>Account</th><th>Workload Name</th><th>Engagement Type</th><th>Solution Architect</th><th>Target Go-Live</th></tr></thead><tbody>${rows || `<tr><td colspan="5" class="empty">No entries yet. Start with a new intake.</td></tr>`}</tbody></table></div>`;
     app.querySelector('#catalog-search').addEventListener('input',event=>{
       const query=event.target.value.toLowerCase(); let visible=0;
       app.querySelectorAll('.catalog-table tbody tr').forEach(row=>{const show=row.textContent.toLowerCase().includes(query);row.hidden=!show;if(show)visible++;});
