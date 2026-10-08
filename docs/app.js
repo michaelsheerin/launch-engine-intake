@@ -130,7 +130,7 @@ function allGoalRows() {
   const groups = Object.entries(GOALS).map(([group, values]) => {
     const rows = choiceRowItems('goals',values,cursor);
     cursor += values.length;
-    return `<div class="goal-group"><div class="goal-group-label">${esc(titleCaseLabel(group))}</div><div class="goal-group-rows">${rows}</div></div>`;
+    return `<div class="goal-group"><div class="goal-group-label"><span>${esc(titleCaseLabel(group))}</span></div><div class="goal-group-rows">${rows}</div></div>`;
   }).join('');
   return `<div class="choice-table goals-table"><div class="choice-table-head"><span aria-hidden="true"></span><span>Item</span><span>Applies to This Migration</span><span>Executive Mandate?</span><span>Notes and More Details</span></div>${groups}</div>`;
 }
