@@ -99,6 +99,9 @@ function grid(items, third=false) { return `<div class="grid ${third ? 'thirds' 
 function section(id, title, content, description='', open=false) {
   return `<details class="section" data-section="${id}" ${open ? 'open' : ''}><summary>${esc(title)}</summary><div class="section-body">${description ? `<p class="section-description">${esc(description)}</p>` : ''}${content}</div></details>`;
 }
+function subsection(id, title, content, description='') {
+  return `<details class="subsection" data-subsection="${esc(id)}" open><summary>${esc(title)}</summary><div class="subsection-body">${description ? `<p class="subsection-description">${esc(description)}</p>` : ''}${content}</div></details>`;
+}
 function repeatCards(path, title, fields, addLabel, defaultItem={}, third=false) {
   const values = getPath(draft, path) || [];
   return `<div class="repeat-list">${values.map((_, i) => `<div class="repeat-card"><div class="repeat-head"><h3>${esc(title)} ${i + 1}</h3><button type="button" class="button button-quiet button-small" data-remove="${esc(path)}" data-index="${i}" aria-label="Remove ${esc(title)} ${i + 1}">Remove</button></div>${grid(fields(`${path}.${i}`, i),third)}</div>`).join('')}</div><button type="button" class="button button-outline button-small add-row" data-add="${esc(path)}" data-template="${esc(JSON.stringify(defaultItem))}">+ ${esc(addLabel)}</button>`;
@@ -167,7 +170,7 @@ function peopleSection() {
     field(`${prefix}.topic`,'Topic'), field(`${prefix}.audience`,'Customer Audience'),
     field(`${prefix}.notes`,'Additional Notes',{type:'textarea',full:true})
   ],'Add Cadence Call',{},true);
-  return section('people','2. People and Meetings',`<h3>Key Customer Contacts</h3>${people}<h3>Customer Cadence Calls</h3>${meetings}`,'List customer stakeholders who make decisions or own delivery, plus the calls already scheduled or planned. Capture the cadence and audience so Launch joins the right discussions. The customer or its implementation partner owns delivery.');
+  return section('people','2. People and Meetings',subsection('people-contacts','Key Customer Contacts',people)+subsection('people-meetings','Customer Cadence Calls',meetings),'List customer stakeholders who make decisions or own delivery, plus the calls already scheduled or planned. Capture the cadence and audience so Launch joins the right discussions. The customer or its implementation partner owns delivery.');
 }
 function outcomesSection() {
   const reasons = `<details class="subsection" data-subsection="reasons" open><summary>Reasons to Migrate</summary><div class="subsection-body"><p class="subsection-description">Select the business or timing drivers behind this move. Mark executive mandates and add only the context Launch needs for the handoff.</p>${choiceRows('reasons',REASONS.slice(0,-1))}${grid([
@@ -186,7 +189,8 @@ function outcomesSection() {
       field(`${prefix}.targetGoal`,'Target Goal',{type:'textarea',full:true})
     ])}</div>`
   ],'Add Success Measure');
-  return section('outcomes','3. Business Case and Success',`${reasons}${goals}<h3>Success Measures</h3><p class="subsection-description">Add the criteria the customer will use to judge launch readiness. For measurable targets, describe the metric and target goal.</p>${success}`,'Record why the customer chose OCI and how they will judge progress. Select active drivers and goals, then capture any executive mandate or success measure already agreed with the customer.');
+  const successSubsection = `<details class="subsection" data-subsection="success" open><summary>Success Measures</summary><div class="subsection-body"><p class="subsection-description">Add the criteria the customer will use to judge launch readiness. For measurable targets, describe the metric and target goal.</p>${success}</div></details>`;
+  return section('outcomes','3. Business Case and Success',`${reasons}${goals}${successSubsection}`,'Record why the customer chose OCI and how they will judge progress. Select active drivers and goals, then capture any executive mandate or success measure already agreed with the customer.');
 }
 function workloadSection() {
   const workloads = repeatCards('workloads','Workload',prefix => [
@@ -216,23 +220,23 @@ function workloadSection() {
     field(`${prefix}.descriptionMarkdown`,'Short Description',{type:'textarea',markdown:true,full:true}),
     field(`${prefix}.nextStepMarkdown`,'Next Step',{type:'textarea',markdown:true,full:true})
   ],'Add blocker');
-  return section('workloads','4. Workloads and Migration Plan',`<h3>In-Scope Workloads</h3>${workloads}<h3>Out of Scope</h3>${exclusions}<h3>Challenges or Concerns</h3>${choiceRows('concerns',CONCERNS)}<h3>Blockers</h3>${blockers}`,'List each workload in scope, its OCI services, approach, wave, and ETA. Mark exclusions and active blockers so Launch understands the planned work and the decisions still open.',true);
+  return section('workloads','4. Workloads and Migration Plan',subsection('workloads-in-scope','In-Scope Workloads',workloads)+subsection('workloads-out-of-scope','Out of Scope',exclusions)+subsection('workloads-concerns','Challenges or Concerns',choiceRows('concerns',CONCERNS))+subsection('workloads-blockers','Blockers',blockers),'List each workload in scope, its OCI services, approach, wave, and ETA. Mark exclusions and active blockers so Launch understands the planned work and the decisions still open.',true);
 }
 function assessmentSection() {
-  return section('assessment','5. Current State Assessment',ASSESSMENT.map(([key,label]) => `<h3 class="subheading">${esc(label)}</h3>${grid([
+  return section('assessment','5. Current State Assessment',ASSESSMENT.map(([key,label]) => subsection(`assessment-${key}`,label,grid([
     field(`assessment.${key}.currentState`,'Current State',{type:'textarea',markdown:true}),
     field(`assessment.${key}.targetState`,'Target State',{type:'textarea',markdown:true}),
     field(`assessment.${key}.requirements`,'Technical Requirements or Dependencies',{type:'textarea',markdown:true}),
     field(`assessment.${key}.gaps`,'Gaps or Decisions Needed',{type:'textarea',markdown:true}),
     field(`assessment.${key}.customerOwner`,'Customer Owner')
-  ])}`).join(''),'Summarize the current architecture and proposed OCI direction for applicable areas. Link pursuit discovery instead of rewriting detailed inventories, and flag gaps affecting the launch plan.');
+  ]))).join(''),'Summarize the current architecture and proposed OCI direction for applicable areas. Link pursuit discovery instead of rewriting detailed inventories, and flag gaps affecting the launch plan.');
 }
 function readinessSection() {
-  return section('readiness','6. OCI Foundation Readiness',READINESS.map(([key,label]) => `<h3 class="subheading">${esc(label)}</h3>${grid([
+  return section('readiness','6. OCI Foundation Readiness',READINESS.map(([key,label]) => subsection(`readiness-${key}`,label,grid([
     field(`readiness.${key}.status`,'Status',{type:'select',options:['Complete','Open','Unknown']}),
     field(`readiness.${key}.owner`,'Owner'),
     field(`readiness.${key}.evidenceMarkdown`,'Requirement, Decision, or Evidence',{type:'textarea',markdown:true,full:true})
-  ])}`).join(''),'Show the status of OCI foundation elements needed for this workload. Name an owner and link evidence for open items, especially access, network, security, operations, and capacity.');
+  ]))).join(''),'Show the status of OCI foundation elements needed for this workload. Name an owner and link evidence for open items, especially access, network, security, operations, and capacity.');
 }
 function raidSection() {
   const raid = repeatCards('raid','RAID item',prefix => [
@@ -242,12 +246,12 @@ function raidSection() {
     field(`${prefix}.descriptionMarkdown`,'Description',{type:'textarea',markdown:true,full:true}),
     field(`${prefix}.impactMarkdown`,'Impact or Decision Required',{type:'textarea',markdown:true,full:true})
   ],'Add RAID item');
-  const artifacts = ARTIFACTS.map(([key,label]) => `<h3 class="subheading">${esc(label)}</h3>${grid([
+  const artifacts = ARTIFACTS.map(([key,label]) => subsection(`artifact-${key}`,label,grid([
     field(`artifacts.${key}.available`,'Available?',{type:'select',options:['Yes','No','Unknown']}),
     field(`artifacts.${key}.link`,'Location or Link'),
     field(`artifacts.${key}.ownerDue`,'Owner and Gap Closure Date',{full:true})
-  ])}`).join('');
-  return section('raid','7. RAID and Artifact Links',`<h3>Risks, Assumptions, Issues, Dependencies, and Decisions</h3>${raid}<h3>Artifact Links</h3>${artifacts}`,'Capture unresolved risks, assumptions, issues, dependencies, and decisions with owners. Link existing pursuit artifacts and identify who will close any missing input.');
+  ]))).join('');
+  return section('raid','7. RAID and Artifact Links',subsection('raid-items','Risks, Assumptions, Issues, Dependencies, and Decisions',raid)+subsection('raid-artifacts','Artifact Links',artifacts),'Capture unresolved risks, assumptions, issues, dependencies, and decisions with owners. Link existing pursuit artifacts and identify who will close any missing input.');
 }
 
 function autoGrowNote(el) {
