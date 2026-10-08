@@ -1,1 +1,13 @@
-
+{
+  "entries": [
+    {
+      "id": "a6ac50b7-6364-416e-929a-158e58532711",
+      "customerOrganization": "Cedar Vale Manufacturing (fictional)",
+      "workloadName": "Oracle E-Business Suite production migration",
+      "engagementType": "Migration",
+      "solutionArchitect": "Morgan Chen (fictional)",
+      "targetGoLive": "2027-03-20",
+      "updatedAt": "2026-10-08T03:08:32.667Z"
+    }
+  ]
+}
