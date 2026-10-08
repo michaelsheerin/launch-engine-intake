@@ -8,7 +8,7 @@ A public, optional-field workload handoff form and catalog. The sample entry is 
 - Select **New entry**, fill any known fields, then select **Submit entry**.
 - Sign in with GitHub to write. The account needs write access to this repository.
 - Open a catalog row to see the full intake, then use **Edit** or **Delete**.
-- Markdown works in long-text fields. Add as many workloads, contacts, meetings, exclusions, blockers, and RAID items as needed.
+- Markdown works in long-text fields. Add as many workloads, contacts, meetings, exclusions, and blockers as needed. Sections 6 and 7 use compact tables for foundation readiness and artifact links.
 
 Records are JSON files in [`data/entries`](data/entries). Each save creates a Git commit. Deletion removes the current file; Git history retains earlier versions.
 
