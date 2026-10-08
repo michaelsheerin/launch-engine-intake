@@ -35,11 +35,11 @@
   "reasons": {
     "0":{"selected":true,"executiveMandate":false,"note":"Refresh the EBS hosting platform without changing core business processes."},
     "1":{"selected":true,"executiveMandate":false,"note":"Support a new distribution center and higher order volume."},
-    "2":{"selected":true,"executiveMandate":true,"note":"Ohio data center lease ends in June 2027."},
+    "2":{"selected":true,"executiveMandate":true,"note":"**Executive deadline:** Ohio data center lease ends in June 2027."},
     "3":{"selected":true,"executiveMandate":false,"note":"Hardware support renewal is due in July 2027."},
-    "4":{"selected":false,"executiveMandate":false,"note":"No merger or acquisition drives this program."},
-    "5":{"selected":true,"executiveMandate":false,"note":"Reduce recovery time after regional facility incidents."}
+    "4":{"selected":false,"executiveMandate":false,"note":"No merger or acquisition drives this program."}
   },
+  "reasonOtherMarkdown": "Reduce recovery time after regional facility incidents.",
   "goals": {
     "0":{"selected":true,"note":"Modernize hosting while keeping EBS release 12.2."},
     "1":{"selected":true,"note":"Support two planned distribution sites."},
