@@ -385,11 +385,22 @@ async function publicRead(path) {
   const base='https://api.github.com/repos/michaelsheerin/launch-engine-intake/contents/data/entries';
   if (path !== '/api/entries') {
     const id=path.split('/').at(-1);
+    try {
+      const snapshot=await fetch(`./data/entries/${encodeURIComponent(id)}.json`,{cache:'no-store'});
+      if (snapshot.ok) {
+        const entry=await snapshot.json();
+        if (entry.id===id) return {entry};
+      }
+    } catch {}
     const response=await fetch(`${base}/${encodeURIComponent(id)}.json`,{headers:{Accept:'application/vnd.github+json'}});
     if (!response.ok) throw new Error(`Entry unavailable (${response.status})`);
     const file=await response.json();
     return {entry:JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(file.content.replace(/\s/g,'')),c=>c.charCodeAt(0))))};
   }
+  try {
+    const snapshot=await fetch('./data/catalog.json',{cache:'no-store'});
+    if (snapshot.ok) return await snapshot.json();
+  } catch {}
   const response=await fetch(base,{headers:{Accept:'application/vnd.github+json'}});
   if (!response.ok) throw new Error(`Catalog unavailable (${response.status})`);
   const files=await response.json();
