@@ -103,6 +103,10 @@ function repeatCards(path, title, fields, addLabel, defaultItem={}, third=false)
   const values = getPath(draft, path) || [];
   return `<div class="repeat-list">${values.map((_, i) => `<div class="repeat-card"><div class="repeat-head"><h3>${esc(title)} ${i + 1}</h3><button type="button" class="button button-quiet button-small" data-remove="${esc(path)}" data-index="${i}" aria-label="Remove ${esc(title)} ${i + 1}">Remove</button></div>${grid(fields(`${path}.${i}`, i),third)}</div>`).join('')}</div><button type="button" class="button button-outline button-small add-row" data-add="${esc(path)}" data-template="${esc(JSON.stringify(defaultItem))}">+ ${esc(addLabel)}</button>`;
 }
+function titleCaseLabel(value) {
+  const smallWords = new Set(['a','an','and','for','in','of','on','or','the','to','with']);
+  return String(value).split(' ').map((word, index) => index && smallWords.has(word.toLowerCase()) ? word.toLowerCase() : word.replace(/^[a-z]/, ch => ch.toUpperCase())).join(' ');
+}
 function choiceRows(path, values, offset=0) {
   return `<div class="choice-table"><div class="choice-table-head"><span>Item</span><span>Applies to This Migration</span><span>Executive Mandate?</span><span>Note / More Details</span></div>${values.map((label, index) => {
     const key = String(index + offset);
@@ -110,7 +114,7 @@ function choiceRows(path, values, offset=0) {
     const selected = !!getPath(draft, `${prefix}.selected`);
     const executive = !!getPath(draft, `${prefix}.executiveMandate`);
     const note = getPath(draft, `${prefix}.note`) || '';
-    return `<div class="choice-table-row"><span class="choice-label">${esc(label)}</span><label class="choice-check"><input type="checkbox" data-path="${prefix}.selected" aria-label="Applies to this migration: ${esc(label)}" ${selected ? 'checked' : ''}><span class="choice-mobile-label">Applies to This Migration</span></label><label class="choice-check"><input type="checkbox" data-path="${prefix}.executiveMandate" aria-label="Executive mandate: ${esc(label)}" ${executive ? 'checked' : ''}><span class="choice-mobile-label">Executive Mandate?</span></label><input class="choice-note" type="text" data-path="${prefix}.note" value="${esc(note)}" aria-label="Note or more details for ${esc(label)}" placeholder="Add details if useful"></div>`;
+    return `<div class="choice-table-row"><span class="choice-label">${esc(titleCaseLabel(label))}</span><label class="choice-check"><input type="checkbox" data-path="${prefix}.selected" aria-label="Applies to this migration: ${esc(label)}" ${selected ? 'checked' : ''}><span class="choice-mobile-label">Applies to This Migration</span></label><label class="choice-check"><input type="checkbox" data-path="${prefix}.executiveMandate" aria-label="Executive mandate: ${esc(label)}" ${executive ? 'checked' : ''}><span class="choice-mobile-label">Executive Mandate?</span></label><input class="choice-note" type="text" data-path="${prefix}.note" value="${esc(note)}" aria-label="Note or more details for ${esc(label)}" placeholder="Add details if useful"></div>`;
   }).join('')}</div>`;
 }
 function goalOptions() {
@@ -123,7 +127,7 @@ function allGoalRows() {
   return Object.entries(GOALS).map(([group, values]) => {
     const html = choiceRows('goals',values,cursor);
     cursor += values.length;
-    return `<h3 class="subheading">${esc(group)}</h3>${html}`;
+    return `<h3 class="subheading">${esc(titleCaseLabel(group))}</h3>${html}`;
   }).join('');
 }
 function checklist(path, values) {
@@ -284,7 +288,7 @@ function cards(items, render) { return items?.length ? `<div class="item-list">$
 function selectedRows(object, labels, mandate=false) {
   return labels.map((label,i) => {
     const item = object?.[i]; if (!item?.selected && !item?.note && !item?.executiveMandate) return '';
-    return `<div class="item-card"><span class="tag">${esc(label)}</span>${!item?.selected ? '<span class="tag tag-muted">Not selected</span>' : ''}${mandate && item?.executiveMandate ? '<span class="tag">Executive mandate</span>' : ''}${item?.note ? `<p>${esc(item.note)}</p>` : ''}</div>`;
+    return `<div class="item-card"><span class="tag">${esc(titleCaseLabel(label))}</span>${!item?.selected ? '<span class="tag tag-muted">Not selected</span>' : ''}${mandate && item?.executiveMandate ? '<span class="tag">Executive mandate</span>' : ''}${item?.note ? `<p>${esc(item.note)}</p>` : ''}</div>`;
   }).join('');
 }
 function recordBody(record) {
