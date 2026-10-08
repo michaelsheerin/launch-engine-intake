@@ -60,7 +60,7 @@ function blankEntry() {
   return {
     schemaVersion: 1,
     profile: {}, summaryMarkdown: '', stakeholders: [], meetings: [],
-    reasons: {}, goals: {}, goalOtherMarkdown: '', successMeasures: [], workloads: [], exclusions: [],
+    reasons: {}, reasonOtherMarkdown: '', goals: {}, goalOtherMarkdown: '', successMeasures: [], workloads: [], exclusions: [],
     concerns: {}, blockers: [],
     assessment: {}, readiness: {}, raid: [], artifacts: {}
   };
@@ -107,15 +107,18 @@ function titleCaseLabel(value) {
   const smallWords = new Set(['a','an','and','for','in','of','on','or','the','to','with']);
   return String(value).split(' ').map((word, index) => index && smallWords.has(word.toLowerCase()) ? word.toLowerCase() : word.replace(/^[a-z]/, ch => ch.toUpperCase())).join(' ');
 }
-function choiceRows(path, values, offset=0) {
-  return `<div class="choice-table"><div class="choice-table-head"><span>Item</span><span>Applies to This Migration</span><span>Executive Mandate?</span><span>Note / More Details</span></div>${values.map((label, index) => {
+function choiceRowItems(path, values, offset=0) {
+  return values.map((label, index) => {
     const key = String(index + offset);
     const prefix = `${path}.${key}`;
     const selected = !!getPath(draft, `${prefix}.selected`);
     const executive = !!getPath(draft, `${prefix}.executiveMandate`);
     const note = getPath(draft, `${prefix}.note`) || '';
-    return `<div class="choice-table-row"><span class="choice-label">${esc(titleCaseLabel(label))}</span><label class="choice-check"><input type="checkbox" data-path="${prefix}.selected" aria-label="Applies to this migration: ${esc(label)}" ${selected ? 'checked' : ''}><span class="choice-mobile-label">Applies to This Migration</span></label><label class="choice-check"><input type="checkbox" data-path="${prefix}.executiveMandate" aria-label="Executive mandate: ${esc(label)}" ${executive ? 'checked' : ''}><span class="choice-mobile-label">Executive Mandate?</span></label><input class="choice-note" type="text" data-path="${prefix}.note" value="${esc(note)}" aria-label="Note or more details for ${esc(label)}" placeholder="Add details if useful"></div>`;
-  }).join('')}</div>`;
+    return `<div class="choice-table-row"><span class="choice-label">${esc(titleCaseLabel(label))}</span><label class="choice-check"><input type="checkbox" data-path="${prefix}.selected" aria-label="Applies to this migration: ${esc(label)}" ${selected ? 'checked' : ''}><span class="choice-mobile-label">Applies to This Migration</span></label><label class="choice-check"><input type="checkbox" data-path="${prefix}.executiveMandate" aria-label="Executive mandate: ${esc(label)}" ${executive ? 'checked' : ''}><span class="choice-mobile-label">Executive Mandate?</span></label><textarea class="choice-note auto-grow" rows="1" data-path="${prefix}.note" aria-label="Notes and More Details for ${esc(label)}" placeholder="Add details if useful">${esc(note)}</textarea></div>`;
+  }).join('');
+}
+function choiceRows(path, values, offset=0) {
+  return `<div class="choice-table"><div class="choice-table-head"><span>Item</span><span>Applies to This Migration</span><span>Executive Mandate?</span><span>Notes and More Details</span></div>${choiceRowItems(path,values,offset)}</div>`;
 }
 function goalOptions() {
   const out = [];
@@ -124,11 +127,12 @@ function goalOptions() {
 }
 function allGoalRows() {
   let cursor = 0;
-  return Object.entries(GOALS).map(([group, values]) => {
-    const html = choiceRows('goals',values,cursor);
+  const groups = Object.entries(GOALS).map(([group, values]) => {
+    const rows = choiceRowItems('goals',values,cursor);
     cursor += values.length;
-    return `<h3 class="subheading">${esc(titleCaseLabel(group))}</h3>${html}`;
+    return `<div class="goal-group"><div class="goal-group-label">${esc(titleCaseLabel(group))}</div><div class="goal-group-rows">${rows}</div></div>`;
   }).join('');
+  return `<div class="choice-table goals-table"><div class="choice-table-head"><span aria-hidden="true"></span><span>Item</span><span>Applies to This Migration</span><span>Executive Mandate?</span><span>Notes and More Details</span></div>${groups}</div>`;
 }
 function checklist(path, values) {
   const selected = getPath(draft, path) || [];
@@ -166,21 +170,23 @@ function peopleSection() {
   return section('people','2. People and Meetings',`<h3>Key Customer Contacts</h3>${people}<h3>Customer Cadence Calls</h3>${meetings}`,'List customer stakeholders who make decisions or own delivery, plus the calls already scheduled or planned. Capture the cadence and audience so Launch joins the right discussions. The customer or its implementation partner owns delivery.');
 }
 function outcomesSection() {
-  const reasons = `<h3>Reasons to Migrate</h3><p class="subsection-description">Select the business or timing drivers behind this move. Mark executive mandates and add only the context Launch needs for the handoff.</p>${choiceRows('reasons',REASONS)}`;
-  const goals = `<h3>Goals and Improvements</h3><p class="subsection-description">Select the outcomes the customer expects from OCI. Note details already agreed, especially where they affect launch priorities.</p>${allGoalRows()}`;
+  const reasons = `<details class="subsection" data-subsection="reasons" open><summary>Reasons to Migrate</summary><div class="subsection-body"><p class="subsection-description">Select the business or timing drivers behind this move. Mark executive mandates and add only the context Launch needs for the handoff.</p>${choiceRows('reasons',REASONS.slice(0,-1))}${grid([
+    field('reasonOtherMarkdown','Other Reason to Migrate',{type:'textarea',full:true,hint:'Markdown supported in the published entry.'})
+  ])}</div></details>`;
+  const goals = `<details class="subsection" data-subsection="goals" open><summary>Goals and Improvements</summary><div class="subsection-body"><p class="subsection-description">Select the outcomes the customer expects from OCI. Note details already agreed, especially where they affect launch priorities.</p>${allGoalRows()}${grid([
+    field('goalOtherMarkdown','Other Goal or Improvement',{type:'textarea',full:true})
+  ])}</div></details>`;
   const success = repeatCards('successMeasures','Success Measure',prefix => [
     field(`${prefix}.name`,'Success Measure Name',{full:true}),
     field(`${prefix}.shortDescription`,'Short Description',{type:'textarea',full:true}),
     field(`${prefix}.impactsGoNoGo`,'Will This Impact the Go/No-Go Decision?',{type:'select',options:['Yes','No'],selectPrompt:'Choose yes or no'}),
     field(`${prefix}.isMeasurableMetric`,'Is This a Measurable Metric?',{type:'select',options:['Yes','No'],selectPrompt:'Choose yes or no',revealOnYes:true}),
     `<div class="metric-fields full" data-reveal-for="${esc(`${prefix}.isMeasurableMetric`)}" ${getPath(draft,`${prefix}.isMeasurableMetric`)==='Yes'?'':'hidden'}>${grid([
-      field(`${prefix}.metricDescription`,'Metric Description',{type:'textarea'}),
-      field(`${prefix}.targetGoal`,'Target Goal')
+      field(`${prefix}.metricDescription`,'Metric Description',{type:'textarea',full:true}),
+      field(`${prefix}.targetGoal`,'Target Goal',{type:'textarea',full:true})
     ])}</div>`
   ],'Add Success Measure');
-  return section('outcomes','3. Business Case and Success',`${reasons}${goals}${grid([
-    field('goalOtherMarkdown','Other Goal or Improvement',{type:'textarea',full:true})
-  ])}<h3>Success Measures</h3><p class="subsection-description">Add the criteria the customer will use to judge launch readiness. For measurable targets, describe the metric and target goal.</p>${success}`,'Record why the customer chose OCI and how they will judge progress. Select active drivers and goals, then capture any executive mandate or success measure already agreed with the customer.');
+  return section('outcomes','3. Business Case and Success',`${reasons}${goals}<h3>Success Measures</h3><p class="subsection-description">Add the criteria the customer will use to judge launch readiness. For measurable targets, describe the metric and target goal.</p>${success}`,'Record why the customer chose OCI and how they will judge progress. Select active drivers and goals, then capture any executive mandate or success measure already agreed with the customer.');
 }
 function workloadSection() {
   const workloads = repeatCards('workloads','Workload',prefix => [
@@ -244,8 +250,15 @@ function raidSection() {
   return section('raid','7. RAID and Artifact Links',`<h3>Risks, Assumptions, Issues, Dependencies, and Decisions</h3>${raid}<h3>Artifact Links</h3>${artifacts}`,'Capture unresolved risks, assumptions, issues, dependencies, and decisions with owners. Link existing pursuit artifacts and identify who will close any missing input.');
 }
 
+function autoGrowNote(el) {
+  if (el.closest('details:not([open])')) return;
+  el.style.height = 'auto';
+  el.style.height = `${Math.max(36,el.scrollHeight + 2)}px`;
+}
 function renderForm() {
   const open = new Set([...app.querySelectorAll('details[data-section][open]')].map(el => el.dataset.section));
+  const existingSubsections = app.querySelector('details[data-subsection]');
+  const openSubsections = new Set([...app.querySelectorAll('details[data-subsection][open]')].map(el => el.dataset.subsection));
   const isEditing = !!editingId;
   app.innerHTML = `<div class="form-intro"><div><p class="eyebrow">${isEditing ? 'Edit entry' : 'Workload intake'}</p><h1>Launch Engine Project Intake and Qualification Worksheet</h1><p class="form-subtitle">Phase 1 intake for OCI launches and migrations</p><p>Use this worksheet to transfer the proposed workload, customer contacts, existing pursuit work, and open decisions to Launch Engine. The customer or its implementation partner owns delivery. Launch Engine provides sales architecture guidance and helps coordinate the path to launch. Link existing artifacts where available and identify the owner of any gap needed for the next step.</p></div><a class="button button-outline" href="#/">Back to catalog</a></div>
     <div class="notice">This catalog and its records are public. Use fictional or approved public information.</div>
@@ -254,6 +267,8 @@ function renderForm() {
       <div class="form-actions"><span class="muted">Every field is optional. Markdown works in long-text fields.</span><div class="actions"><a class="button button-outline" href="#/">Cancel</a><button class="button" type="submit">${isEditing ? 'Save changes' : 'Submit entry'}</button></div></div>
     </form>`;
   if (open.size) app.querySelectorAll('details[data-section]').forEach(el => { el.open = open.has(el.dataset.section); });
+  if (existingSubsections) app.querySelectorAll('details[data-subsection]').forEach(el => { el.open = openSubsections.has(el.dataset.subsection); });
+  app.querySelectorAll('textarea.auto-grow').forEach(autoGrowNote);
 }
 
 function sanitizeHtml(html) {
@@ -288,7 +303,7 @@ function cards(items, render) { return items?.length ? `<div class="item-list">$
 function selectedRows(object, labels, mandate=false) {
   return labels.map((label,i) => {
     const item = object?.[i]; if (!item?.selected && !item?.note && !item?.executiveMandate) return '';
-    return `<div class="item-card"><span class="tag">${esc(titleCaseLabel(label))}</span>${!item?.selected ? '<span class="tag tag-muted">Not selected</span>' : ''}${mandate && item?.executiveMandate ? '<span class="tag">Executive mandate</span>' : ''}${item?.note ? `<p>${esc(item.note)}</p>` : ''}</div>`;
+    return `<div class="item-card"><span class="tag">${esc(titleCaseLabel(label))}</span>${!item?.selected ? '<span class="tag tag-muted">Not selected</span>' : ''}${mandate && item?.executiveMandate ? '<span class="tag">Executive mandate</span>' : ''}${item?.note ? `<div class="markdown-body">${renderMarkdown(item.note)}</div>` : ''}</div>`;
   }).join('');
 }
 function recordBody(record) {
@@ -307,7 +322,7 @@ function recordBody(record) {
   const reasons = selectedRows(record.reasons,REASONS,true);
   const goals = selectedRows(record.goals,goalOptions(),true);
   const success = cards(record.successMeasures,(v,i)=>`<h3>${esc(v.name || `Success Measure ${i+1}`)}</h3><div class="detail-grid">${detail('Short Description',v.shortDescription)}${detail('Impacts Go/No-Go',v.impactsGoNoGo)}${detail('Measurable Metric',v.isMeasurableMetric)}${v.isMeasurableMetric==='Yes'?detail('Metric Description',v.metricDescription)+detail('Target Goal',v.targetGoal):''}</div>`);
-  const outcomes = `${reasons ? `<h3>Reasons to Migrate</h3>${reasons}` : ''}${goals ? `<h3>Goals and Improvements</h3>${goals}` : ''}${record.goalOtherMarkdown ? `<h3>Other Goal</h3><div class="markdown-body">${renderMarkdown(record.goalOtherMarkdown)}</div>` : ''}${success ? `<h3>Success Measures</h3>${success}` : ''}${record.successMeasuresMarkdown ? `<h3>Earlier Success Measures</h3><div class="markdown-body">${renderMarkdown(record.successMeasuresMarkdown)}</div>` : ''}`;
+  const outcomes = `${reasons ? `<h3>Reasons to Migrate</h3>${reasons}` : ''}${record.reasonOtherMarkdown ? `<h3>Other Reason to Migrate</h3><div class="markdown-body">${renderMarkdown(record.reasonOtherMarkdown)}</div>` : ''}${goals ? `<h3>Goals and Improvements</h3>${goals}` : ''}${record.goalOtherMarkdown ? `<h3>Other Goal</h3><div class="markdown-body">${renderMarkdown(record.goalOtherMarkdown)}</div>` : ''}${success ? `<h3>Success Measures</h3>${success}` : ''}${record.successMeasuresMarkdown ? `<h3>Earlier Success Measures</h3><div class="markdown-body">${renderMarkdown(record.successMeasuresMarkdown)}</div>` : ''}`;
   const workloads = cards(record.workloads,(v,i)=>`<h3>${esc(v.name || `Workload ${i+1}`)}</h3><div class="detail-grid">${detail('Business units',v.businessUnits)}${detail('Geographies',v.geographies)}${detail('Technologies in use',v.sourceTechnologies)}${detail('Application type',v.applicationType)}${detail('Vendor and product',v.applicationVendor)}${detail('Oracle products',v.oracleProducts)}${detail('Target OCI services',v.targetServices)}${detail('Service categories',(v.serviceCategories||[]).join(', '))}${detail('Wave',v.migrationWave)}${detail('ETA',v.eta)}${detail('Approach',v.disposition)}${detail('Customer owner',v.customerOwner)}${detail('Description',v.descriptionMarkdown,true)}${detail('Considerations',v.considerationsMarkdown,true)}</div>`);
   const exclusions = cards(record.exclusions,(v,i)=>`<h3>${esc(v.item || `Out-of-scope item ${i+1}`)}</h3><div class="detail-grid">${detail('Future phase',v.futurePhase)}${detail('Description',v.description)}${detail('Assumptions',v.assumptions)}</div>`);
   const concerns = selectedRows(record.concerns,CONCERNS,true);
@@ -431,10 +446,15 @@ async function route() {
 
 app.addEventListener('input',event=>{
   const el=event.target;
+  if(el.matches('textarea.auto-grow'))autoGrowNote(el);
   if(el.dataset.path && draft)setPath(draft,el.dataset.path,el.type==='checkbox'?el.checked:el.value);
   if(el.dataset.otherPath && draft){const detail=app.querySelector(`[data-other-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Other';if(el.value!=='Other')setPath(draft,el.dataset.otherPath,'');}
   if(el.dataset.revealOnYes){const detail=app.querySelector(`[data-reveal-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Yes';}
 });
+app.addEventListener('toggle',event=>{
+  if(event.target.matches('details[data-subsection]') && event.target.open)event.target.querySelectorAll('textarea.auto-grow').forEach(autoGrowNote);
+},true);
+window.addEventListener('resize',()=>app.querySelectorAll('textarea.auto-grow').forEach(autoGrowNote));
 app.addEventListener('change',event=>{
   const el=event.target;
   if(el.dataset.path && draft)setPath(draft,el.dataset.path,el.type==='checkbox'?el.checked:el.value);
