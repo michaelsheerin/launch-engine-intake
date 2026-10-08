@@ -156,7 +156,7 @@ async function listEntries(env) {
   const files=await github(env,`/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/data/entries?ref=main`);
   const records=await Promise.all((Array.isArray(files)?files:[]).filter(file=>file.type==='file'&&file.name.endsWith('.json')).map(async file=>{
     const {entry}=await readEntry(env,file.name.slice(0,-5));
-    return {id:entry.id,customerOrganization:entry.profile?.customerOrganization||'',workloadName:entry.profile?.workloadName||entry.workloads?.[0]?.name||'',engagementType:entry.profile?.engagementType||'',targetRegions:entry.profile?.targetRegions||'',targetGoLive:entry.profile?.targetGoLive||'',updatedAt:entry.updatedAt||''};
+    return {id:entry.id,customerOrganization:entry.profile?.customerOrganization||'',workloadName:entry.profile?.workloadName||entry.workloads?.[0]?.name||'',engagementType:entry.profile?.engagementType||'',solutionArchitect:entry.profile?.solutionArchitect||'',targetRegions:entry.profile?.targetRegions||'',targetGoLive:entry.profile?.targetGoLive||'',updatedAt:entry.updatedAt||''};
   }));
   return records.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
 }
