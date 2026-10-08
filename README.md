@@ -18,9 +18,11 @@ Records are JSON files in [`data/entries`](data/entries). Each save creates a Gi
 | --- | --- |
 | `docs/` | GitHub Pages catalog, form, and record view |
 | `data/entries/` | One JSON file per workload intake |
+| `docs/data/` | Public read fallback, generated from `data/entries/` |
+| `scripts/sync_public_data.py` | Builds the Pages data mirror and catalog summary |
 | `worker/` | Cloudflare Worker for GitHub sign-in and authenticated writes |
 
-The public catalog reads through the Worker when available, with a direct GitHub API fallback for reads. Writes require the Worker.
+The public catalog reads through the Worker when available, with a Pages data mirror and GitHub API fallback for reads. A GitHub Actions workflow refreshes the mirror after entry changes. Writes require the Worker.
 
 ## Deployment
 
