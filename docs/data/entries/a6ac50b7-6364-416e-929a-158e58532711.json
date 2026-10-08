@@ -1,1 +1,146 @@
-
+{
+  "schemaVersion": 1,
+  "id": "a6ac50b7-6364-416e-929a-158e58532711",
+  "createdAt": "2026-10-08T03:08:32.667Z",
+  "updatedAt": "2026-10-08T03:08:32.667Z",
+  "createdBy": "michaelsheerin",
+  "updatedBy": "michaelsheerin",
+  "profile": {
+    "customerOrganization": "Cedar Vale Manufacturing (fictional)",
+    "workloadName": "Oracle E-Business Suite production migration",
+    "engagementType": "Migration",
+    "targetRegions": "US East (Ashburn), US Midwest (Chicago)",
+    "customerLocation": "Columbus, Ohio, United States",
+    "industry": "Industrial manufacturing",
+    "opportunityId": "DEMO-OPP-27041",
+    "orderNumber": "DEMO-ORD-1428",
+    "bookingDate": "2026-09-28",
+    "accountExecutive": "Avery Bennett (fictional)",
+    "oracleDeliveryLead": "Jordan Lee, Pursuits handoff (fictional)",
+    "solutionArchitect": "Morgan Chen (fictional)",
+    "implementationPartner": "North Bridge Systems, Priya Shah (fictional)",
+    "targetGoLive": "2027-03-20",
+    "plannedStart": "2026-11-02"
+  },
+  "summaryMarkdown": "## Proposed launch\nMove Cedar Vale's Oracle E-Business Suite 12.2 production estate and supporting integrations from its Ohio data center to OCI. The customer and North Bridge Systems own implementation. Launch Engine will review architecture decisions, coordinate Oracle service specialists, and track open platform blockers.\n\nThe initial migration wave covers nonproduction validation before a customer-led production cutover.",
+  "stakeholders": [
+    {"name":"Elena Ortiz (fictional)","role":"Customer application owner","contact":"elena.ortiz@example.com","influence":"Approves EBS functional testing and acceptance","notes":"Primary business decision maker for the migration wave."},
+    {"name":"Priya Shah (fictional)","role":"Implementation partner lead","contact":"priya.shah@example.com","influence":"Owns implementation plan and cutover execution","notes":"Coordinates infrastructure, database, and application workstreams."},
+    {"name":"Noah Brooks (fictional)","role":"Customer cloud platform owner","contact":"noah.brooks@example.com","influence":"Approves tenancy, networking, and operational handoff","notes":"Customer team has operated one small OCI analytics workload."}
+  ],
+  "meetings": [
+    {"day":"Tuesday","time":"10:00 AM","timeZone":"Eastern (ET)","cadence":"Weekly","topic":"Architecture and blocker review","audience":"Application owner, platform owner, partner lead","notes":"30-minute review each Tuesday until the pilot exits."},
+    {"day":"Tuesday","time":"2:00 PM","timeZone":"Eastern (ET)","cadence":"Biweekly","topic":"Production readiness review","audience":"Application owner, security lead, partner lead","notes":"Customer program manager owns the agenda and decisions."}
+  ],
+  "reasons": {
+    "0":{"selected":true,"executiveMandate":false,"note":"Refresh the EBS hosting platform without changing core business processes."},
+    "1":{"selected":true,"executiveMandate":false,"note":"Support a new distribution center and higher order volume."},
+    "2":{"selected":true,"executiveMandate":true,"note":"**Executive deadline:** Ohio data center lease ends in June 2027."},
+    "3":{"selected":true,"executiveMandate":false,"note":"Hardware support renewal is due in July 2027."},
+    "4":{"selected":false,"executiveMandate":false,"note":"No merger or acquisition drives this program."}
+  },
+  "reasonOtherMarkdown": "Reduce recovery time after regional facility incidents.",
+  "goals": {
+    "0":{"selected":true,"note":"Modernize hosting while keeping EBS release 12.2."},
+    "1":{"selected":true,"note":"Support two planned distribution sites."},
+    "2":{"selected":true,"note":"Use OCI Compute, Database, and Object Storage."},
+    "3":{"selected":true,"note":"Pursuits estimate targets a lower five-year infrastructure run rate."},
+    "4":{"selected":true,"note":"Reduce lead time for nonproduction environments."},
+    "5":{"selected":true,"note":"Improve recovery capability for order management."},
+    "6":{"selected":true,"note":"Provision test capacity ahead of quarterly release cycles."},
+    "7":{"selected":true,"note":"Align spend with the production and test environment schedule."},
+    "8":{"selected":true,"note":"Tag application and environment costs separately."},
+    "9":{"selected":false,"note":"Existing Oracle licenses remain in the draft licensing model."},
+    "10":{"selected":true,"executiveMandate":true,"note":"Exit leased facilities and retired server hardware."},
+    "11":{"selected":true,"note":"Increase test capacity during release validation."},
+    "12":{"selected":true,"note":"Target a four-hour RTO for the production application."},
+    "13":{"selected":true,"note":"Centralize access review, logging, and encryption controls."}
+  },
+  "goalOtherMarkdown": "- Validate repeatable cloning of nonproduction EBS environments.\n- Hand a documented operating model to Cedar Vale's platform team.",
+  "workloads": [
+    {
+      "name":"EBS production application and database",
+      "disposition":"Rehost",
+      "businessUnits":"Finance, procurement, order management, manufacturing",
+      "descriptionMarkdown":"Production EBS application tier and Oracle Database. The partner proposes a parallel OCI build followed by a customer-approved cutover. **Final sizing and support validation remain open.**",
+      "applicationVendor":"Oracle E-Business Suite 12.2",
+      "applicationUse":"Internal",
+      "applicationType":"Oracle application",
+      "sourceTechnologies":"Oracle E-Business Suite 12.2, Oracle Database 19c, Linux VMs, NFS attachments",
+      "migrationWave":"Wave 2: production",
+      "eta":"2027-03-20",
+      "customerOwner":"Elena Ortiz (fictional)",
+      "serviceCategories":["Compute","Block Storage","Object Storage","Database","Integration","FastConnect","Logging and Observability"],
+      "otherOciServicesMarkdown":"OCI Load Balancer, Vault, and DNS",
+      "considerationsMarkdown":"- Maintain integration connectivity to the manufacturing execution system during transition.\n- Freeze EBS changes for the agreed cutover window.\n- Confirm database service and license assumptions with the customer."
+    },
+    {
+      "name":"EBS nonproduction validation environments",
+      "disposition":"Rehost",
+      "businessUnits":"IT, finance testing, supply chain testing",
+      "descriptionMarkdown":"Build a representative OCI nonproduction environment for performance, functional, and operational testing before production migration.",
+      "applicationVendor":"Oracle E-Business Suite 12.2",
+      "applicationUse":"Other",
+      "applicationUseOther":"Preproduction validation and user acceptance testing",
+      "applicationType":"Oracle application",
+      "sourceTechnologies":"EBS 12.2 clone, Oracle Database 19c, Linux VMs",
+      "migrationWave":"Wave 1: validation",
+      "eta":"2027-01-29",
+      "customerOwner":"Noah Brooks (fictional)",
+      "serviceCategories":["Compute","Block Storage","Database","Logging and Observability"],
+      "otherOciServicesMarkdown":"OCI Vault for test credentials and Object Storage for masked backup files.",
+      "considerationsMarkdown":"Success requires representative integrations and an agreed data-masking process for test data."
+    }
+  ],
+  "exclusions": [
+    {"item":"Manufacturing execution system","futurePhase":"No","description":"Remains in the Ohio facility for this migration wave.","assumptions":"Private connectivity stays available until the integration is redesigned."},
+    {"item":"Analytics data mart","futurePhase":"Yes","estimatedTargetDate":"2027-09-30","description":"Separate modernization opportunity after EBS production stabilization.","assumptions":"The current data extract continues during the initial OCI cutover."}
+  ],
+  "concerns": {
+    "0":{"selected":true,"note":"Custom EBS extensions need dependency testing."},
+    "1":{"selected":true,"note":"Legacy storage mounts must be mapped to OCI equivalents."},
+    "2":{"selected":true,"note":"The order management integration spans several application tiers."},
+    "3":{"selected":true,"note":"US data residency applies to order and employee records."},
+    "4":{"selected":true,"note":"Customer team needs a clear monitoring and escalation model."},
+    "5":{"selected":true,"executiveMandate":true,"note":"Identity federation and privileged access require review."},
+    "6":{"selected":true,"note":"Cutover plan must protect open orders and support rollback."},
+    "7":{"selected":true,"note":"Batch windows and month-end close are sensitive to latency."}
+  },
+  "concernOtherMarkdown":"Customer wants one dry run before production cutover.",
+  "blockers": [
+    {"name":"Database target design validation","category":"Compatibility","impact":"Hard requirement","owner":"Morgan Chen (fictional)","eta":"2026-11-20","ticket":"DEMO-JIRA-1042","descriptionMarkdown":"Confirm the proposed Oracle Database target, EBS support position, and license assumptions before finalizing the production architecture.","nextStepMarkdown":"Pursuits architect will review the design with the database specialist and customer licensing contact."},
+    {"name":"Ashburn compute capacity review","category":"Capacity","impact":"Soft requirement","owner":"Jordan Lee (fictional)","eta":"2026-12-04","ticket":"DEMO-CAP-441","descriptionMarkdown":"The current estimate calls for a peak of 96 OCPUs during parallel validation. Region capacity is not yet reserved.","nextStepMarkdown":"Confirm shape mix and need-by dates, then submit a capacity review request."}
+  ],
+  "successMeasures": [
+    {"name":"Nonproduction month-end validation","shortDescription":"EBS completes a representative month-end cycle with no unresolved critical defects.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Open critical defects after the month-end test","targetGoal":"0 critical defects"},
+    {"name":"Production cutover window","shortDescription":"The customer-led cutover finishes within the approved outage window.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Elapsed production outage during cutover","targetGoal":"8 hours or less"},
+    {"name":"Business process acceptance","shortDescription":"Business owners validate order creation, receiving, and finance posting after cutover.","impactsGoNoGo":"Yes","isMeasurableMetric":"No"},
+    {"name":"Operations handoff","shortDescription":"The platform team accepts monitoring, backup, and incident ownership.","impactsGoNoGo":"No","isMeasurableMetric":"No"}
+  ],
+  "assessment": {
+    "applications":{"currentState":"EBS 12.2 application tier on 14 Linux VMs.","targetState":"OCI Compute application tier across two availability domains where available.","requirements":"Review custom extensions, interface endpoints, and supported software versions.","gaps":"Complete partner inventory of custom concurrent programs.","customerOwner":"Elena Ortiz (fictional)","architectureDiagram":"https://example.com/demo/architecture/applications"},
+    "data":{"currentState":"Oracle Database 19c, 22 TB allocated storage, nightly RMAN backups.","targetState":"Proposed Oracle Base Database Service with encrypted backups in Object Storage.","requirements":"Validate throughput, backup retention, licensing, and data transfer sequence.","gaps":"Finalize database service selection and validated production sizing.","customerOwner":"Noah Brooks (fictional)","architectureDiagram":"https://example.com/demo/architecture/data"},
+    "network":{"currentState":"Ohio data center hub with MPLS access and firewall policy sets.","targetState":"FastConnect to Ashburn with VPN fallback and segmented VCNs.","requirements":"Customer network team owns CIDR, DNS, routing, and firewall changes.","gaps":"Confirm FastConnect delivery date and route advertisement plan.","customerOwner":"Noah Brooks (fictional)","architectureDiagram":"https://example.com/demo/architecture/network"},
+    "security":{"currentState":"Corporate identity provider, centralized SIEM, privileged access review.","targetState":"Federated OCI IAM, audit export, Cloud Guard, encrypted secrets.","requirements":"Customer security team approves role mappings and log retention.","gaps":"Review privileged break-glass access and SIEM connector design.","customerOwner":"Mina Patel (fictional)","architectureDiagram":"https://example.com/demo/architecture/security"},
+    "resilience":{"currentState":"Nightly backups; manual DR runbook at secondary data center.","targetState":"Four-hour RTO target with replicated backups and tested restore steps.","requirements":"Customer owns DR test and production rollback criteria.","gaps":"Finalize RPO target and schedule restore test.","customerOwner":"Elena Ortiz (fictional)","architectureDiagram":"https://example.com/demo/architecture/resilience"},
+    "other":{"currentState":"A separate batch scheduler and managed file transfer gateway serve EBS interfaces.","targetState":"The customer plans OCI-hosted scheduling with private connectivity to the retained transfer gateway.","requirements":"Confirm job sequencing, credentials, and end-to-end transfer testing.","gaps":"Decide whether the gateway migrates in a later phase.","customerOwner":"Priya Shah (fictional)","architectureDiagram":"https://example.com/demo/architecture/integrations"}
+  },
+  "readiness": {
+    "tenancy":{"status":"Complete","owner":"Noah Brooks (fictional)","evidenceMarkdown":"Existing OCI tenancy and compartment plan; cost tags defined for EBS environments."},
+    "iam":{"status":"Open","owner":"Mina Patel (fictional)","evidenceMarkdown":"Federation exists. EBS admin roles and break-glass access need review."},
+    "network":{"status":"Open","owner":"Noah Brooks (fictional)","evidenceMarkdown":"FastConnect order submitted; VPN fallback design awaits route review."},
+    "security":{"status":"Open","owner":"Mina Patel (fictional)","evidenceMarkdown":"NSG and firewall policy draft is linked from the target design."},
+    "observability":{"status":"Open","owner":"Noah Brooks (fictional)","evidenceMarkdown":"Customer SIEM integration and alert routing need final owners."},
+    "operations":{"status":"Open","owner":"Priya Shah (fictional)","evidenceMarkdown":"Partner is drafting backup, restore, incident, and change procedures."},
+    "capacity":{"status":"Open","owner":"Jordan Lee (fictional)","evidenceMarkdown":"Sizing estimate exists; region capacity review is still open."}
+  },
+  "artifacts": {
+    "charter":{"link":"https://example.com/demo/ebs-charter","owner":"Priya Shah (fictional)"},
+    "governance":{"link":"https://example.com/demo/ebs-governance","owner":"Priya Shah (fictional)"},
+    "currentArchitecture":{"link":"https://example.com/demo/current-architecture","owner":"Morgan Chen (fictional)"},
+    "targetArchitecture":{"link":"https://example.com/demo/target-architecture","owner":"Morgan Chen (fictional)"},
+    "sizing":{"link":"https://example.com/demo/sizing-ramp","owner":"Jordan Lee (fictional)"},
+    "migration":{"link":"https://example.com/demo/migration-plan-draft","owner":"Priya Shah (fictional)"},
+    "pursuit":{"link":"https://example.com/demo/pursuit-handoff","owner":"Jordan Lee (fictional)"}
+  }
+}
