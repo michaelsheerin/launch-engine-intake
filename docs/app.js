@@ -18,8 +18,8 @@ const GOALS = {
 const CONCERNS = [
   'Technical debt in legacy systems', 'Technical debt in source infrastructure or another CSP',
   'Complexity of the source workload', 'Compliance, regulatory, or data sovereignty requirements',
-  'Operational or manageability concerns', 'Security or data privacy',
-  'Data loss or service availability', 'Performance', 'Other'
+  'Operational or manageability concerns', 'Security or data privacy concerns',
+  'Strict data loss and availability SLAs', 'Critical performance requirements', 'Other'
 ];
 const ASSESSMENT = [
   ['applications', 'Applications, servers, VMs, and containers'],
@@ -46,7 +46,7 @@ const ARTIFACTS = [
   ['migration', 'Migration wave plan, runbooks, test, UAT, rollback plans'],
   ['pursuit', 'Pursuit artifacts, customer approvals, discovery assumptions']
 ];
-const SERVICE_CATEGORIES = ['Compute', 'Block Storage', 'Object Storage', 'Database', 'Networking', 'Identity and Security', 'Observability', 'Other'];
+const SERVICE_CATEGORIES = ['Compute', 'Block Storage', 'Object Storage', 'Database', 'Oracle Kubernetes Engine', 'Gen AI Service', 'GPU Compute', 'Integration', 'Functions, Streaming, Events', 'FastConnect', 'Logging and Observability'];
 const DISPOSITIONS = ['Rehost', 'Replatform', 'Refactor', 'Retain', 'Retire', 'Repurchase'];
 const CALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const CALL_TIMES = Array.from({length:29},(_,i)=>{const hour=6+Math.floor(i/2);const minute=i%2?'30':'00';return `${hour>12?hour-12:hour}:${minute} ${hour<12?'AM':'PM'}`;});
@@ -61,7 +61,7 @@ function blankEntry() {
     schemaVersion: 1,
     profile: {}, summaryMarkdown: '', stakeholders: [], meetings: [],
     reasons: {}, reasonOtherMarkdown: '', goals: {}, goalOtherMarkdown: '', successMeasures: [], workloads: [], exclusions: [],
-    concerns: {}, blockers: [],
+    concerns: {}, concernOtherMarkdown: '', blockers: [],
     assessment: {}, readiness: {}, raid: [], artifacts: {}
   };
 }
@@ -79,7 +79,7 @@ function setPath(object, path, value) {
   });
   current[keys.at(-1)] = value;
 }
-function field(path, label, {type='text', options=[], full=false, hint='', placeholder='', selectPrompt='Select, if known', revealOnYes=false}={}) {
+function field(path, label, {type='text', options=[], full=false, hint='', placeholder='', selectPrompt='Select, if known', revealOnYes=false, autoGrow=false, compact=false, autoGrowOther=false}={}) {
   const id = `f-${path.replace(/[^a-z0-9]/gi, '-')}`;
   const value = getPath(draft, path) ?? '';
   let control = '';
@@ -87,9 +87,9 @@ function field(path, label, {type='text', options=[], full=false, hint='', place
     const otherPath = `${path}Other`;
     const otherValue = getPath(draft, otherPath) ?? '';
     control = `<select id="${id}" data-path="${esc(path)}" ${options.includes('Other') ? `data-other-path="${esc(otherPath)}"` : ''} ${revealOnYes ? 'data-reveal-on-yes="true"' : ''}><option value="">${esc(selectPrompt)}</option>${options.map(option => `<option value="${esc(option)}" ${value === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
-    if (options.includes('Other')) control += `<div class="other-detail" data-other-for="${esc(path)}" ${value === 'Other' ? '' : 'hidden'}><label for="${id}-other">${esc(label)} Details</label><input id="${id}-other" data-path="${esc(otherPath)}" type="text" value="${esc(otherValue)}" placeholder="Add details"></div>`;
+    if (options.includes('Other')) control += `<div class="other-detail" data-other-for="${esc(path)}" ${value === 'Other' ? '' : 'hidden'}><label for="${id}-other">${esc(label)} Details</label>${autoGrowOther ? `<textarea id="${id}-other" class="auto-grow compact-autogrow" data-min-height="40" rows="1" data-path="${esc(otherPath)}" placeholder="Add details">${esc(otherValue)}</textarea>` : `<input id="${id}-other" data-path="${esc(otherPath)}" type="text" value="${esc(otherValue)}" placeholder="Add details">`}</div>`;
   } else if (type === 'textarea') {
-    control = `<textarea id="${id}" data-path="${esc(path)}" placeholder="${esc(placeholder)}">${esc(value)}</textarea>`;
+    control = `<textarea id="${id}" class="${autoGrow ? `auto-grow ${compact ? 'compact-autogrow' : ''}` : ''}" ${autoGrow ? `data-min-height="${compact ? 40 : 92}" rows="${compact ? 1 : 3}"` : ''} data-path="${esc(path)}" placeholder="${esc(placeholder)}">${esc(value)}</textarea>`;
   } else {
     control = `<input id="${id}" data-path="${esc(path)}" type="${esc(type)}" value="${esc(value)}" placeholder="${esc(placeholder)}">`;
   }
@@ -194,33 +194,40 @@ function outcomesSection() {
 }
 function workloadSection() {
   const workloads = repeatCards('workloads','Workload',prefix => [
-    field(`${prefix}.name`,'Name'), field(`${prefix}.businessUnits`,'Key Business Units'),
-    field(`${prefix}.geographies`,'Key Geographic Regions'), field(`${prefix}.sourceTechnologies`,'Key Technologies or Software in Use'),
+    field(`${prefix}.name`,'Workload Title',{type:'textarea',autoGrow:true,compact:true}),
+    field(`${prefix}.disposition`,'Migration Approach',{type:'select',options:DISPOSITIONS}),
+    field(`${prefix}.businessUnits`,'Line-of-Business',{type:'textarea',autoGrow:true,compact:true}),
+    field(`${prefix}.descriptionMarkdown`,'Description',{type:'textarea',autoGrow:true,full:true}),
+    field(`${prefix}.applicationVendor`,'Application Name and Vendor',{type:'textarea',autoGrow:true,compact:true}),
+    field(`${prefix}.applicationUse`,'Application Use',{type:'select',options:['Internal','Customer-Facing','Supporting Technology','Other'],autoGrowOther:true}),
     field(`${prefix}.applicationType`,'Application Type',{type:'select',options:['Custom or proprietary','Vendor application','Oracle application','Mixed']}),
-    field(`${prefix}.applicationVendor`,'Application Vendor and Product'),
-    field(`${prefix}.oracleProducts`,'Existing Oracle Products'),
-    field(`${prefix}.targetServices`,'Target OCI Services'), field(`${prefix}.migrationWave`,'Migration Wave'),
-    field(`${prefix}.eta`,'ETA',{type:'date'}), field(`${prefix}.disposition`,'Disposition and Approach',{type:'select',options:DISPOSITIONS}),
-    field(`${prefix}.customerOwner`,'Customer Owner'),
-    field(`${prefix}.descriptionMarkdown`,'Description',{type:'textarea',markdown:true,full:true}),
-    `<div class="field full"><label>Target OCI Service Categories</label>${checklist(`${prefix}.serviceCategories`,SERVICE_CATEGORIES)}</div>`,
-    field(`${prefix}.considerationsMarkdown`,'Additional Considerations',{type:'textarea',markdown:true,full:true})
-  ],'Add workload');
+    field(`${prefix}.sourceTechnologies`,'Current Tech Stack',{type:'textarea',autoGrow:true,full:true}),
+    field(`${prefix}.migrationWave`,'Planned Migration Phase',{type:'textarea',autoGrow:true,compact:true}),
+    field(`${prefix}.eta`,'Estimated Start Date',{type:'date'}),
+    field(`${prefix}.customerOwner`,'Customer Owner',{type:'textarea',autoGrow:true,compact:true}),
+    `<div class="field full service-categories"><label>Target OCI Service Categories</label>${checklist(`${prefix}.serviceCategories`,SERVICE_CATEGORIES)}</div>`,
+    field(`${prefix}.otherOciServicesMarkdown`,'Other OCI Services Planned',{type:'textarea',autoGrow:true,full:true}),
+    field(`${prefix}.considerationsMarkdown`,'Additional Considerations or Technical Dependencies',{type:'textarea',autoGrow:true,full:true})
+  ],'Add workload',{},true);
   const exclusions = repeatCards('exclusions','Out-of-scope item',prefix => [
-    field(`${prefix}.item`,'Item'), field(`${prefix}.futurePhase`,'Planned for Future Phase?',{type:'select',options:['Yes','No','Unknown']}),
-    field(`${prefix}.description`,'Exclusion Description',{type:'textarea',full:true}),
-    field(`${prefix}.assumptions`,'Assumptions',{type:'textarea',full:true})
+    field(`${prefix}.item`,'Title'),
+    field(`${prefix}.futurePhase`,'Planned for Future Phase?',{type:'select',options:['Yes','No','Unknown'],revealOnYes:true}),
+    `<div class="field full conditional-date" data-reveal-for="${esc(`${prefix}.futurePhase`)}" ${getPath(draft,`${prefix}.futurePhase`)==='Yes'?'':'hidden'}>${field(`${prefix}.estimatedTargetDate`,'Estimated Target Date',{type:'date'})}</div>`,
+    field(`${prefix}.description`,'Exclusion Reasoning',{type:'textarea'}),
+    field(`${prefix}.assumptions`,'Future Assumptions to Consider',{type:'textarea'})
   ],'Add out-of-scope item');
   const blockers = repeatCards('blockers','Blocker',prefix => [
-    field(`${prefix}.name`,'Blocker Name'), field(`${prefix}.category`,'Category',{type:'select',options:['Service feature','Security enhancement','Compatibility','Capacity','Other']}),
-    field(`${prefix}.impact`,'Blocker Impact',{type:'select',options:['Hard requirement','Soft requirement','Unknown']}),
-    field(`${prefix}.status`,'Current Status',{type:'select',options:['Open','In progress','Resolved']}),
-    field(`${prefix}.owner`,'PM or Owner'), field(`${prefix}.eta`,'Next Step ETA',{type:'date'}),
+    field(`${prefix}.name`,'Blocker Title'),
+    field(`${prefix}.category`,'Category',{type:'select',options:['Service feature','Security enhancement','Compatibility','Capacity','Other']}),
+    field(`${prefix}.impact`,'Impact',{type:'select',options:['Hard requirement','Soft requirement','Unknown']}),
+    field(`${prefix}.descriptionMarkdown`,'Short Description',{type:'textarea',full:true}),
+    field(`${prefix}.owner`,'PM or Owner'),
     field(`${prefix}.ticket`,'Ticket ID or Link'),
-    field(`${prefix}.descriptionMarkdown`,'Short Description',{type:'textarea',markdown:true,full:true}),
-    field(`${prefix}.nextStepMarkdown`,'Next Step',{type:'textarea',markdown:true,full:true})
-  ],'Add blocker');
-  return section('workloads','4. Workloads and Migration Plan',subsection('workloads-in-scope','In-Scope Workloads',workloads)+subsection('workloads-out-of-scope','Out of Scope',exclusions)+subsection('workloads-concerns','Challenges or Concerns',choiceRows('concerns',CONCERNS))+subsection('workloads-blockers','Blockers',blockers),'List each workload in scope, its OCI services, approach, wave, and ETA. Mark exclusions and active blockers so Launch understands the planned work and the decisions still open.',true);
+    field(`${prefix}.eta`,'Resolution ETA',{type:'date'}),
+    field(`${prefix}.nextStepMarkdown`,'Next Steps',{type:'textarea',autoGrow:true,compact:true,full:true})
+  ],'Add blocker',{},true);
+  const concernOther = grid([field('concernOtherMarkdown','Other Challenge or Risk',{type:'textarea',full:true})]);
+  return section('workloads','4. Workloads and Migration Plan',subsection('workloads-in-scope','In-Scope Workloads',workloads)+subsection('workloads-out-of-scope','Out-of-Scope Items',exclusions)+subsection('workloads-concerns','Challenges and Risks',choiceRows('concerns',CONCERNS.slice(0,-1))+concernOther)+subsection('workloads-blockers','Blockers',blockers),'List each workload in scope, its OCI services, migration approach, planned phase, and estimated start date. Mark exclusions and active blockers so Launch understands the planned work and the decisions still open.',true);
 }
 function assessmentSection() {
   return section('assessment','5. Current State Assessment',ASSESSMENT.map(([key,label]) => subsection(`assessment-${key}`,label,grid([
@@ -257,7 +264,7 @@ function raidSection() {
 function autoGrowNote(el) {
   if (el.closest('details:not([open])')) return;
   el.style.height = 'auto';
-  el.style.height = `${Math.max(36,el.scrollHeight + 2)}px`;
+  el.style.height = `${Math.max(Number(el.dataset.minHeight) || 36,el.scrollHeight + 2)}px`;
 }
 function renderForm() {
   const open = new Set([...app.querySelectorAll('details[data-section][open]')].map(el => el.dataset.section));
@@ -297,7 +304,7 @@ function renderMarkdown(value) {
   if (!window.marked) return esc(value).replace(/\n/g,'<br>');
   return sanitizeHtml(window.marked.parse(String(value), {gfm:true,breaks:true}));
 }
-function valueText(value) { return value == null || value === '' ? '' : esc(value); }
+function valueText(value) { return value == null || value === '' ? '' : esc(value).replace(/\n/g,'<br>'); }
 function detail(label, value, markdown=false) {
   if (value == null || value === '') return '';
   return `<div class="detail"><dt>${esc(label)}</dt><dd class="${markdown ? 'markdown-body' : ''}">${markdown ? renderMarkdown(value) : valueText(value)}</dd></div>`;
@@ -327,17 +334,17 @@ function recordBody(record) {
   const goals = selectedRows(record.goals,goalOptions(),true);
   const success = cards(record.successMeasures,(v,i)=>`<h3>${esc(v.name || `Success Measure ${i+1}`)}</h3><div class="detail-grid">${detail('Short Description',v.shortDescription)}${detail('Impacts Go/No-Go',v.impactsGoNoGo)}${detail('Measurable Metric',v.isMeasurableMetric)}${v.isMeasurableMetric==='Yes'?detail('Metric Description',v.metricDescription)+detail('Target Goal',v.targetGoal):''}</div>`);
   const outcomes = `${reasons ? `<h3>Reasons to Migrate</h3>${reasons}` : ''}${record.reasonOtherMarkdown ? `<h3>Other Reason to Migrate</h3><div class="markdown-body">${renderMarkdown(record.reasonOtherMarkdown)}</div>` : ''}${goals ? `<h3>Goals and Improvements</h3>${goals}` : ''}${record.goalOtherMarkdown ? `<h3>Other Goal</h3><div class="markdown-body">${renderMarkdown(record.goalOtherMarkdown)}</div>` : ''}${success ? `<h3>Success Measures</h3>${success}` : ''}${record.successMeasuresMarkdown ? `<h3>Earlier Success Measures</h3><div class="markdown-body">${renderMarkdown(record.successMeasuresMarkdown)}</div>` : ''}`;
-  const workloads = cards(record.workloads,(v,i)=>`<h3>${esc(v.name || `Workload ${i+1}`)}</h3><div class="detail-grid">${detail('Business units',v.businessUnits)}${detail('Geographies',v.geographies)}${detail('Technologies in use',v.sourceTechnologies)}${detail('Application type',v.applicationType)}${detail('Vendor and product',v.applicationVendor)}${detail('Oracle products',v.oracleProducts)}${detail('Target OCI services',v.targetServices)}${detail('Service categories',(v.serviceCategories||[]).join(', '))}${detail('Wave',v.migrationWave)}${detail('ETA',v.eta)}${detail('Approach',v.disposition)}${detail('Customer owner',v.customerOwner)}${detail('Description',v.descriptionMarkdown,true)}${detail('Considerations',v.considerationsMarkdown,true)}</div>`);
-  const exclusions = cards(record.exclusions,(v,i)=>`<h3>${esc(v.item || `Out-of-scope item ${i+1}`)}</h3><div class="detail-grid">${detail('Future phase',v.futurePhase)}${detail('Description',v.description)}${detail('Assumptions',v.assumptions)}</div>`);
+  const workloads = cards(record.workloads,(v,i)=>`<h3>${esc(v.name || `Workload ${i+1}`)}</h3><div class="detail-grid">${detail('Migration Approach',v.disposition)}${detail('Line-of-Business',v.businessUnits)}${detail('Description',v.descriptionMarkdown,true)}${detail('Application Name and Vendor',v.applicationVendor)}${detail('Application Use',v.applicationUse === 'Other' && v.applicationUseOther ? `Other: ${v.applicationUseOther}` : v.applicationUse)}${detail('Application Type',v.applicationType)}${detail('Current Tech Stack',v.sourceTechnologies,true)}${detail('Planned Migration Phase',v.migrationWave)}${detail('Estimated Start Date',v.eta)}${detail('Customer Owner',v.customerOwner)}${detail('Target OCI Service Categories',(v.serviceCategories||[]).join(', '))}${detail('Other OCI Services Planned',v.otherOciServicesMarkdown,true)}${detail('Additional Considerations or Technical Dependencies',v.considerationsMarkdown,true)}</div>`);
+  const exclusions = cards(record.exclusions,(v,i)=>`<h3>${esc(v.item || `Out-of-scope item ${i+1}`)}</h3><div class="detail-grid">${detail('Planned for Future Phase?',v.futurePhase)}${v.futurePhase==='Yes'?detail('Estimated Target Date',v.estimatedTargetDate):''}${detail('Exclusion Reasoning',v.description)}${detail('Future Assumptions to Consider',v.assumptions)}</div>`);
   const concerns = selectedRows(record.concerns,CONCERNS,true);
-  const blockers = cards(record.blockers,(v,i)=>`<h3>${esc(v.name || `Blocker ${i+1}`)}</h3><div class="detail-grid">${detail('Category',v.category === 'Other' && v.categoryOther ? `Other: ${v.categoryOther}` : v.category)}${detail('Impact',v.impact)}${detail('Status',v.status)}${detail('Owner',v.owner)}${detail('ETA',v.eta)}${detail('Ticket',v.ticket)}${detail('Description',v.descriptionMarkdown,true)}${detail('Next Step',v.nextStepMarkdown,true)}</div>`);
+  const blockers = cards(record.blockers,(v,i)=>`<h3>${esc(v.name || `Blocker ${i+1}`)}</h3><div class="detail-grid">${detail('Category',v.category === 'Other' && v.categoryOther ? `Other: ${v.categoryOther}` : v.category)}${detail('Impact',v.impact)}${detail('Short Description',v.descriptionMarkdown,true)}${detail('PM or Owner',v.owner)}${detail('Ticket ID or Link',v.ticket)}${detail('Resolution ETA',v.eta)}${detail('Next Steps',v.nextStepMarkdown,true)}</div>`);
   const assessment = ASSESSMENT.map(([key,label])=>{const v=record.assessment?.[key]||{};const d=[detail('Current state',v.currentState,true),detail('Target state',v.targetState,true),detail('Requirements or dependencies',v.requirements,true),detail('Gaps or decisions',v.gaps,true),detail('Customer owner',v.customerOwner)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
   const readiness = READINESS.map(([key,label])=>{const v=record.readiness?.[key]||{};const d=[detail('Status',v.status),detail('Owner',v.owner),detail('Evidence',v.evidenceMarkdown,true)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
   const raid = cards(record.raid,(v,i)=>`<h3>${esc(v.type || `RAID item ${i+1}`)}</h3><div class="detail-grid">${detail('Description',v.descriptionMarkdown,true)}${detail('Impact or decision',v.impactMarkdown,true)}${detail('Owner',v.owner)}${detail('Due date',v.dueDate)}${detail('Evidence',v.evidence)}</div>`);
   const artifacts = ARTIFACTS.map(([key,label])=>{const v=record.artifacts?.[key]||{};const d=[detail('Available',v.available),detail('Link',v.link),detail('Owner and date',v.ownerDue)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
   return [
     detailPanel('1. Workload Profile',profile), detailPanel('2. People and Meetings',`${people ? `<h3>Key Customer Contacts</h3>${people}` : ''}${meetings ? `<h3>Customer Cadence Calls</h3>${meetings}` : ''}`),
-    detailPanel('3. Business Case and Success',outcomes), detailPanel('4. Workloads and Migration Plan',`${workloads}${exclusions}${concerns}${blockers}`),
+    detailPanel('3. Business Case and Success',outcomes), detailPanel('4. Workloads and Migration Plan',`${workloads}${exclusions}${concerns ? `<h3>Challenges and Risks</h3>${concerns}` : ''}${record.concernOtherMarkdown ? `<h3>Other Challenge or Risk</h3><div class="markdown-body">${renderMarkdown(record.concernOtherMarkdown)}</div>` : ''}${blockers}`),
     detailPanel('5. Current State Assessment',assessment), detailPanel('6. OCI Foundation Readiness',readiness),
     detailPanel('7. RAID and Artifact Links',`${raid}${artifacts}`)
   ].join('');
@@ -453,7 +460,7 @@ app.addEventListener('input',event=>{
   if(el.matches('textarea.auto-grow'))autoGrowNote(el);
   if(el.dataset.path && draft)setPath(draft,el.dataset.path,el.type==='checkbox'?el.checked:el.value);
   if(el.dataset.otherPath && draft){const detail=app.querySelector(`[data-other-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Other';if(el.value!=='Other')setPath(draft,el.dataset.otherPath,'');}
-  if(el.dataset.revealOnYes){const detail=app.querySelector(`[data-reveal-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Yes';}
+  if(el.dataset.revealOnYes){const detail=app.querySelector(`[data-reveal-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Yes';if(el.dataset.path.endsWith('.futurePhase')&&el.value!=='Yes'){setPath(draft,el.dataset.path.replace(/\.futurePhase$/,'.estimatedTargetDate'),'');const date=detail?.querySelector('input[type="date"]');if(date)date.value='';}}
 });
 app.addEventListener('toggle',event=>{
   if(event.target.matches('details[data-subsection]') && event.target.open)event.target.querySelectorAll('textarea.auto-grow').forEach(autoGrowNote);
