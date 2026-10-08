@@ -60,42 +60,41 @@
   "workloads": [
     {
       "name":"EBS production application and database",
+      "disposition":"Rehost",
       "businessUnits":"Finance, procurement, order management, manufacturing",
-      "geographies":"United States; users in North America and Europe",
-      "sourceTechnologies":"Oracle E-Business Suite 12.2, Oracle Database 19c, Linux VMs, NFS attachments",
-      "applicationType":"Oracle application",
+      "descriptionMarkdown":"Production EBS application tier and Oracle Database. The partner proposes a parallel OCI build followed by a customer-approved cutover. **Final sizing and support validation remain open.**",
       "applicationVendor":"Oracle E-Business Suite 12.2",
-      "oracleProducts":"Oracle E-Business Suite, Oracle Database, Oracle WebLogic Server",
-      "targetServices":"OCI Compute, Oracle Base Database Service, Block Volumes, Object Storage, FastConnect",
-      "serviceCategories":["Compute","Block Storage","Object Storage","Database","Networking","Identity and Security","Observability"],
+      "applicationUse":"Internal",
+      "applicationType":"Oracle application",
+      "sourceTechnologies":"Oracle E-Business Suite 12.2, Oracle Database 19c, Linux VMs, NFS attachments",
       "migrationWave":"Wave 2: production",
       "eta":"2027-03-20",
-      "disposition":"Rehost",
       "customerOwner":"Elena Ortiz (fictional)",
-      "descriptionMarkdown":"Production EBS application tier and Oracle Database. The partner proposes a parallel OCI build followed by a customer-approved cutover. **Final sizing and support validation remain open.**",
+      "serviceCategories":["Compute","Block Storage","Object Storage","Database","Integration","FastConnect","Logging and Observability"],
+      "otherOciServicesMarkdown":"OCI Load Balancer, Vault, and DNS",
       "considerationsMarkdown":"- Maintain integration connectivity to the manufacturing execution system during transition.\n- Freeze EBS changes for the agreed cutover window.\n- Confirm database service and license assumptions with the customer."
     },
     {
       "name":"EBS nonproduction validation environments",
+      "disposition":"Rehost",
       "businessUnits":"IT, finance testing, supply chain testing",
-      "geographies":"United States",
-      "sourceTechnologies":"EBS 12.2 clone, Oracle Database 19c, Linux VMs",
-      "applicationType":"Oracle application",
+      "descriptionMarkdown":"Build a representative OCI nonproduction environment for performance, functional, and operational testing before production migration.",
       "applicationVendor":"Oracle E-Business Suite 12.2",
-      "oracleProducts":"Oracle E-Business Suite, Oracle Database",
-      "targetServices":"OCI Compute, Oracle Base Database Service, Block Volumes",
-      "serviceCategories":["Compute","Block Storage","Database","Networking","Observability"],
+      "applicationUse":"Other",
+      "applicationUseOther":"Preproduction validation and user acceptance testing",
+      "applicationType":"Oracle application",
+      "sourceTechnologies":"EBS 12.2 clone, Oracle Database 19c, Linux VMs",
       "migrationWave":"Wave 1: validation",
       "eta":"2027-01-29",
-      "disposition":"Rehost",
       "customerOwner":"Noah Brooks (fictional)",
-      "descriptionMarkdown":"Build a representative OCI nonproduction environment for performance, functional, and operational testing before production migration.",
+      "serviceCategories":["Compute","Block Storage","Database","Logging and Observability"],
+      "otherOciServicesMarkdown":"OCI Vault for test credentials and Object Storage for masked backup files.",
       "considerationsMarkdown":"Success requires representative integrations and an agreed data-masking process for test data."
     }
   ],
   "exclusions": [
     {"item":"Manufacturing execution system","futurePhase":"No","description":"Remains in the Ohio facility for this migration wave.","assumptions":"Private connectivity stays available until the integration is redesigned."},
-    {"item":"Analytics data mart","futurePhase":"Yes","description":"Separate modernization opportunity after EBS production stabilization.","assumptions":"The current data extract continues during the initial OCI cutover."}
+    {"item":"Analytics data mart","futurePhase":"Yes","estimatedTargetDate":"2027-09-30","description":"Separate modernization opportunity after EBS production stabilization.","assumptions":"The current data extract continues during the initial OCI cutover."}
   ],
   "concerns": {
     "0":{"selected":true,"note":"Custom EBS extensions need dependency testing."},
@@ -105,12 +104,12 @@
     "4":{"selected":true,"note":"Customer team needs a clear monitoring and escalation model."},
     "5":{"selected":true,"executiveMandate":true,"note":"Identity federation and privileged access require review."},
     "6":{"selected":true,"note":"Cutover plan must protect open orders and support rollback."},
-    "7":{"selected":true,"note":"Batch windows and month-end close are sensitive to latency."},
-    "8":{"selected":true,"note":"Customer wants one dry run before production cutover."}
+    "7":{"selected":true,"note":"Batch windows and month-end close are sensitive to latency."}
   },
+  "concernOtherMarkdown":"Customer wants one dry run before production cutover.",
   "blockers": [
-    {"name":"Database target design validation","category":"Compatibility","impact":"Hard requirement","status":"In progress","owner":"Morgan Chen (fictional)","eta":"2026-11-20","ticket":"DEMO-JIRA-1042","descriptionMarkdown":"Confirm the proposed Oracle Database target, EBS support position, and license assumptions before finalizing the production architecture.","nextStepMarkdown":"Pursuits architect will review the design with the database specialist and customer licensing contact."},
-    {"name":"Ashburn compute capacity review","category":"Capacity","impact":"Soft requirement","status":"Open","owner":"Jordan Lee (fictional)","eta":"2026-12-04","ticket":"DEMO-CAP-441","descriptionMarkdown":"The current estimate calls for a peak of 96 OCPUs during parallel validation. Region capacity is not yet reserved.","nextStepMarkdown":"Confirm shape mix and need-by dates, then submit a capacity review request."}
+    {"name":"Database target design validation","category":"Compatibility","impact":"Hard requirement","owner":"Morgan Chen (fictional)","eta":"2026-11-20","ticket":"DEMO-JIRA-1042","descriptionMarkdown":"Confirm the proposed Oracle Database target, EBS support position, and license assumptions before finalizing the production architecture.","nextStepMarkdown":"Pursuits architect will review the design with the database specialist and customer licensing contact."},
+    {"name":"Ashburn compute capacity review","category":"Capacity","impact":"Soft requirement","owner":"Jordan Lee (fictional)","eta":"2026-12-04","ticket":"DEMO-CAP-441","descriptionMarkdown":"The current estimate calls for a peak of 96 OCPUs during parallel validation. Region capacity is not yet reserved.","nextStepMarkdown":"Confirm shape mix and need-by dates, then submit a capacity review request."}
   ],
   "successMeasures": [
     {"name":"Nonproduction month-end validation","shortDescription":"EBS completes a representative month-end cycle with no unresolved critical defects.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Open critical defects after the month-end test","targetGoal":"0 critical defects"},
