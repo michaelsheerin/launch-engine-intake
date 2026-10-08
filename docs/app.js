@@ -48,6 +48,9 @@ const ARTIFACTS = [
 ];
 const SERVICE_CATEGORIES = ['Compute', 'Block Storage', 'Object Storage', 'Database', 'Networking', 'Identity and Security', 'Observability', 'Other'];
 const DISPOSITIONS = ['Rehost', 'Replatform', 'Refactor', 'Retain', 'Retire', 'Repurchase'];
+const CALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const CALL_TIMES = Array.from({length:29},(_,i)=>{const hour=6+Math.floor(i/2);const minute=i%2?'30':'00';return `${hour>12?hour-12:hour}:${minute} ${hour<12?'AM':'PM'}`;});
+const CALL_TIME_ZONES = ['UTC','Eastern (ET)','Central (CT)','Mountain (MT)','Pacific (PT)','Alaska (AKT)','Hawaii (HT)','Other'];
 
 let draft = null;
 let editingId = null;
@@ -57,8 +60,8 @@ function blankEntry() {
   return {
     schemaVersion: 1,
     profile: {}, summaryMarkdown: '', stakeholders: [], meetings: [],
-    reasons: {}, goals: {}, goalOtherMarkdown: '', workloads: [], exclusions: [],
-    concerns: {}, blockers: [], successMeasuresMarkdown: '',
+    reasons: {}, goals: {}, goalOtherMarkdown: '', successMeasures: [], workloads: [], exclusions: [],
+    concerns: {}, blockers: [],
     assessment: {}, readiness: {}, raid: [], artifacts: {}
   };
 }
@@ -76,14 +79,17 @@ function setPath(object, path, value) {
   });
   current[keys.at(-1)] = value;
 }
-function field(path, label, {type='text', options=[], full=false, hint='', placeholder='', markdown=false}={}) {
+function field(path, label, {type='text', options=[], full=false, hint='', placeholder='', selectPrompt='Select, if known', revealOnYes=false}={}) {
   const id = `f-${path.replace(/[^a-z0-9]/gi, '-')}`;
   const value = getPath(draft, path) ?? '';
   let control = '';
   if (type === 'select') {
-    control = `<select id="${id}" data-path="${esc(path)}"><option value="">Select, if known</option>${options.map(option => `<option value="${esc(option)}" ${value === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
+    const otherPath = `${path}Other`;
+    const otherValue = getPath(draft, otherPath) ?? '';
+    control = `<select id="${id}" data-path="${esc(path)}" ${options.includes('Other') ? `data-other-path="${esc(otherPath)}"` : ''} ${revealOnYes ? 'data-reveal-on-yes="true"' : ''}><option value="">${esc(selectPrompt)}</option>${options.map(option => `<option value="${esc(option)}" ${value === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
+    if (options.includes('Other')) control += `<div class="other-detail" data-other-for="${esc(path)}" ${value === 'Other' ? '' : 'hidden'}><label for="${id}-other">${esc(label)} Details</label><input id="${id}-other" data-path="${esc(otherPath)}" type="text" value="${esc(otherValue)}" placeholder="Add details"></div>`;
   } else if (type === 'textarea') {
-    control = `<textarea id="${id}" data-path="${esc(path)}" ${markdown ? 'data-markdown="true"' : ''} placeholder="${esc(placeholder)}">${esc(value)}</textarea>${markdown ? `<div class="markdown-preview" data-preview-for="${esc(path)}">${renderMarkdown(value)}</div>` : ''}`;
+    control = `<textarea id="${id}" data-path="${esc(path)}" placeholder="${esc(placeholder)}">${esc(value)}</textarea>`;
   } else {
     control = `<input id="${id}" data-path="${esc(path)}" type="${esc(type)}" value="${esc(value)}" placeholder="${esc(placeholder)}">`;
   }
@@ -93,19 +99,19 @@ function grid(items, third=false) { return `<div class="grid ${third ? 'thirds' 
 function section(id, title, content, description='', open=false) {
   return `<details class="section" data-section="${id}" ${open ? 'open' : ''}><summary>${esc(title)}</summary><div class="section-body">${description ? `<p class="section-description">${esc(description)}</p>` : ''}${content}</div></details>`;
 }
-function repeatCards(path, title, fields, addLabel, defaultItem={}) {
+function repeatCards(path, title, fields, addLabel, defaultItem={}, third=false) {
   const values = getPath(draft, path) || [];
-  return `<div class="repeat-list">${values.map((_, i) => `<div class="repeat-card"><div class="repeat-head"><h3>${esc(title)} ${i + 1}</h3><button type="button" class="button button-quiet button-small" data-remove="${esc(path)}" data-index="${i}" aria-label="Remove ${esc(title)} ${i + 1}">Remove</button></div>${grid(fields(`${path}.${i}`, i))}</div>`).join('')}</div><button type="button" class="button button-outline button-small add-row" data-add="${esc(path)}" data-template="${esc(JSON.stringify(defaultItem))}">+ ${esc(addLabel)}</button>`;
+  return `<div class="repeat-list">${values.map((_, i) => `<div class="repeat-card"><div class="repeat-head"><h3>${esc(title)} ${i + 1}</h3><button type="button" class="button button-quiet button-small" data-remove="${esc(path)}" data-index="${i}" aria-label="Remove ${esc(title)} ${i + 1}">Remove</button></div>${grid(fields(`${path}.${i}`, i),third)}</div>`).join('')}</div><button type="button" class="button button-outline button-small add-row" data-add="${esc(path)}" data-template="${esc(JSON.stringify(defaultItem))}">+ ${esc(addLabel)}</button>`;
 }
-function choiceRows(path, values, mandate=false) {
-  return `<div class="choice-header"><span>Choose any ${mandate ? 'and mark executive mandates' : ''}</span><span>Optional note</span></div>${values.map((label, index) => {
-    const key = String(index);
+function choiceRows(path, values, offset=0) {
+  return `<div class="choice-table"><div class="choice-table-head"><span>Item</span><span>Applies to This Migration</span><span>Executive Mandate?</span><span>Note / More Details</span></div>${values.map((label, index) => {
+    const key = String(index + offset);
     const prefix = `${path}.${key}`;
     const selected = !!getPath(draft, `${prefix}.selected`);
     const executive = !!getPath(draft, `${prefix}.executiveMandate`);
     const note = getPath(draft, `${prefix}.note`) || '';
-    return `<div class="choice-row"><div><label class="checkbox-line"><input type="checkbox" data-path="${prefix}.selected" ${selected ? 'checked' : ''}>${esc(label)}</label>${mandate ? `<label class="checkbox-line muted"><input type="checkbox" data-path="${prefix}.executiveMandate" ${executive ? 'checked' : ''}>Executive mandate</label>` : ''}</div><input type="text" data-path="${prefix}.note" value="${esc(note)}" aria-label="Note for ${esc(label)}" placeholder="Add context"></div>`;
-  }).join('')}`;
+    return `<div class="choice-table-row"><span class="choice-label">${esc(label)}</span><label class="choice-check"><input type="checkbox" data-path="${prefix}.selected" aria-label="Applies to this migration: ${esc(label)}" ${selected ? 'checked' : ''}><span class="choice-mobile-label">Applies to This Migration</span></label><label class="choice-check"><input type="checkbox" data-path="${prefix}.executiveMandate" aria-label="Executive mandate: ${esc(label)}" ${executive ? 'checked' : ''}><span class="choice-mobile-label">Executive Mandate?</span></label><input class="choice-note" type="text" data-path="${prefix}.note" value="${esc(note)}" aria-label="Note or more details for ${esc(label)}" placeholder="Add details if useful"></div>`;
+  }).join('')}</div>`;
 }
 function goalOptions() {
   const out = [];
@@ -115,13 +121,8 @@ function goalOptions() {
 function allGoalRows() {
   let cursor = 0;
   return Object.entries(GOALS).map(([group, values]) => {
-    const html = values.map(label => {
-      const key = cursor++;
-      const prefix = `goals.${key}`;
-      const checked = !!getPath(draft, `${prefix}.selected`);
-      const note = getPath(draft, `${prefix}.note`) || '';
-      return `<div class="choice-row"><label class="checkbox-line"><input type="checkbox" data-path="${prefix}.selected" ${checked ? 'checked' : ''}>${esc(label)}</label><input type="text" data-path="${prefix}.note" value="${esc(note)}" aria-label="Note for ${esc(label)}" placeholder="Add context"></div>`;
-    }).join('');
+    const html = choiceRows('goals',values,cursor);
+    cursor += values.length;
     return `<h3 class="subheading">${esc(group)}</h3>${html}`;
   }).join('');
 }
@@ -130,108 +131,119 @@ function checklist(path, values) {
   return `<div class="choice-grid">${values.map(option => `<label class="checkbox-line"><input type="checkbox" data-array-path="${esc(path)}" data-option="${esc(option)}" ${selected.includes(option) ? 'checked' : ''}>${esc(option)}</label>`).join('')}</div>`;
 }
 function profileSection() {
-  return section('profile', '1. Workload profile', grid([
-    field('profile.customerOrganization','Customer organization'), field('profile.workloadName','Workload name'),
-    field('profile.engagementType','Engagement type',{type:'select',options:['Net-new tenancy','Modernization','Migration','Disaster recovery','Other']}),
-    field('profile.targetRegions','Target OCI region(s)',{hint:'Separate multiple regions with commas.'}),
-    field('profile.customerLocation','Customer location'), field('profile.industry','Industry'),
-    field('profile.customerOciExperience','Customer OCI experience',{type:'select',options:['No OCI experience','Customer operates OCI','Partner operates OCI','Limited in-house OCI experience','Unknown']}),
-    field('profile.opportunityId','Opportunity ID'), field('profile.orderNumber','Order number'),
-    field('profile.bookingDate','Booking date',{type:'date'}), field('profile.accountExecutive','Account executive'),
-    field('profile.oracleDeliveryLead','Oracle delivery lead'), field('profile.solutionArchitect','Solution architect'),
-    field('profile.implementationPartner','Implementation partner and lead'),
-    field('profile.targetGoLive','Target production go-live',{type:'date'}),
-    field('profile.plannedStart','Planned workload start',{type:'date'}),
-    field('summaryMarkdown','Describe the workload or migration in your own words',{type:'textarea',markdown:true,full:true,hint:'Markdown supported.'})
-  ]), 'Quick identification and context. Leave unknown fields blank.', true);
+  return section('profile', '1. Workload Profile', grid([
+    field('profile.customerOrganization','Account Name'), field('profile.workloadName','Workload Name'),
+    field('profile.engagementType','Engagement Type',{type:'select',options:['Net-new tenancy','Modernization','Migration','Disaster recovery','Other']}),
+    field('profile.targetRegions','Target OCI Regions',{hint:'Separate multiple regions with commas.'}),
+    field('profile.customerLocation','Customer Location'), field('profile.industry','Industry'),
+    field('profile.opportunityId','Opp ID'), field('profile.orderNumber','Order #'),
+    field('profile.bookingDate','Booking Date',{type:'date'}), field('profile.accountExecutive','Account Exec'),
+    field('profile.oracleDeliveryLead','Oracle Delivery Lead'), field('profile.solutionArchitect','Solution Architect'),
+    field('profile.implementationPartner','Implementation Partner'),
+    field('profile.targetGoLive','Target Go-Live',{type:'date'}),
+    field('profile.plannedStart','Planned Workload Start',{type:'date'}),
+    field('summaryMarkdown','Describe the workload or migration in your own words',{type:'textarea',full:true,hint:'Markdown supported in the published entry.'})
+  ],true), 'Identify the account and proposed workload so Launch can route the handoff and align timing. Include the opportunity, order, and leads already involved. A brief workload summary is enough; link detailed pursuit work in Section 7.', true);
 }
 function peopleSection() {
   const people = repeatCards('stakeholders','Contact', prefix => [
     field(`${prefix}.name`,'Name'), field(`${prefix}.role`,'Role'),
-    field(`${prefix}.contact`,'Email or contact'), field(`${prefix}.influence`,'Influence on workload'),
-    field(`${prefix}.notes`,'Additional notes',{type:'textarea',full:true})
-  ],'Add contact');
-  const meetings = repeatCards('meetings','Meeting',prefix => [
-    field(`${prefix}.dateTime`,'Date and time',{type:'datetime-local'}), field(`${prefix}.cadence`,'Cadence',{type:'select',options:['One time','Weekly','Biweekly','Monthly','Other']}),
-    field(`${prefix}.topic`,'Topic'), field(`${prefix}.audience`,'Customer audience'),
-    field(`${prefix}.notes`,'Additional notes',{type:'textarea',full:true})
-  ],'Add meeting');
-  return section('people','2. People and meetings',`<h3>Contacts</h3>${people}<h3>Meetings</h3>${meetings}`,'Add only people and meetings relevant to this handoff.');
+    field(`${prefix}.contact`,'Email or Contact Info'), field(`${prefix}.influence`,'Influence on Workload'),
+    field(`${prefix}.notes`,'Additional Notes',{type:'textarea',full:true})
+  ],'Add customer contact');
+  const meetings = repeatCards('meetings','Cadence Call',prefix => [
+    field(`${prefix}.day`,'Day',{type:'select',options:CALL_DAYS,selectPrompt:'Choose day'}),
+    field(`${prefix}.time`,'Time',{type:'select',options:CALL_TIMES,selectPrompt:'Choose time'}),
+    field(`${prefix}.timeZone`,'Time Zone',{type:'select',options:CALL_TIME_ZONES,selectPrompt:'Choose time zone'}),
+    field(`${prefix}.cadence`,'Cadence',{type:'select',options:['Weekly','Biweekly','Monthly','One-Time','Other'],selectPrompt:'Choose cadence'}),
+    field(`${prefix}.topic`,'Topic'), field(`${prefix}.audience`,'Customer Audience'),
+    field(`${prefix}.notes`,'Additional Notes',{type:'textarea',full:true})
+  ],'Add Cadence Call',{},true);
+  return section('people','2. People and Meetings',`<h3>Key Customer Contacts</h3>${people}<h3>Customer Cadence Calls</h3>${meetings}`,'List customer stakeholders who make decisions or own delivery, plus the calls already scheduled or planned. Capture the cadence and audience so Launch joins the right discussions. The customer or its implementation partner owns delivery.');
 }
 function outcomesSection() {
-  const reasons = `<h3>Reasons to migrate</h3>${choiceRows('reasons',REASONS,true)}`;
-  const goals = `<h3>Goals and improvements</h3>${allGoalRows()}`;
-  return section('outcomes','3. Business case and success',`${reasons}${goals}${grid([
-    field('goalOtherMarkdown','Other goal or improvement',{type:'textarea',markdown:true,full:true}),
-    field('successMeasuresMarkdown','Success measures',{type:'textarea',markdown:true,full:true,hint:'Describe how the customer will judge progress or completion.'})
-  ])}`,'Choose only relevant items; use notes for context.');
+  const reasons = `<h3>Reasons to Migrate</h3><p class="subsection-description">Select the business or timing drivers behind this move. Mark executive mandates and add only the context Launch needs for the handoff.</p>${choiceRows('reasons',REASONS)}`;
+  const goals = `<h3>Goals and Improvements</h3><p class="subsection-description">Select the outcomes the customer expects from OCI. Note details already agreed, especially where they affect launch priorities.</p>${allGoalRows()}`;
+  const success = repeatCards('successMeasures','Success Measure',prefix => [
+    field(`${prefix}.name`,'Success Measure Name',{full:true}),
+    field(`${prefix}.shortDescription`,'Short Description',{type:'textarea',full:true}),
+    field(`${prefix}.impactsGoNoGo`,'Will This Impact the Go/No-Go Decision?',{type:'select',options:['Yes','No'],selectPrompt:'Choose yes or no'}),
+    field(`${prefix}.isMeasurableMetric`,'Is This a Measurable Metric?',{type:'select',options:['Yes','No'],selectPrompt:'Choose yes or no',revealOnYes:true}),
+    `<div class="metric-fields full" data-reveal-for="${esc(`${prefix}.isMeasurableMetric`)}" ${getPath(draft,`${prefix}.isMeasurableMetric`)==='Yes'?'':'hidden'}>${grid([
+      field(`${prefix}.metricDescription`,'Metric Description',{type:'textarea'}),
+      field(`${prefix}.targetGoal`,'Target Goal')
+    ])}</div>`
+  ],'Add Success Measure');
+  return section('outcomes','3. Business Case and Success',`${reasons}${goals}${grid([
+    field('goalOtherMarkdown','Other Goal or Improvement',{type:'textarea',full:true})
+  ])}<h3>Success Measures</h3><p class="subsection-description">Add the criteria the customer will use to judge launch readiness. For measurable targets, describe the metric and target goal.</p>${success}`,'Record why the customer chose OCI and how they will judge progress. Select active drivers and goals, then capture any executive mandate or success measure already agreed with the customer.');
 }
 function workloadSection() {
   const workloads = repeatCards('workloads','Workload',prefix => [
-    field(`${prefix}.name`,'Name'), field(`${prefix}.businessUnits`,'Key business units'),
-    field(`${prefix}.geographies`,'Key geographic regions'), field(`${prefix}.sourceTechnologies`,'Key technologies or software in use'),
-    field(`${prefix}.applicationType`,'Application type',{type:'select',options:['Custom or proprietary','Vendor application','Oracle application','Mixed']}),
-    field(`${prefix}.applicationVendor`,'Application vendor and product'),
-    field(`${prefix}.oracleProducts`,'Existing Oracle products'),
-    field(`${prefix}.targetServices`,'Target OCI services'), field(`${prefix}.migrationWave`,'Migration wave'),
-    field(`${prefix}.eta`,'ETA',{type:'date'}), field(`${prefix}.disposition`,'Disposition and approach',{type:'select',options:DISPOSITIONS}),
-    field(`${prefix}.customerOwner`,'Customer owner'),
+    field(`${prefix}.name`,'Name'), field(`${prefix}.businessUnits`,'Key Business Units'),
+    field(`${prefix}.geographies`,'Key Geographic Regions'), field(`${prefix}.sourceTechnologies`,'Key Technologies or Software in Use'),
+    field(`${prefix}.applicationType`,'Application Type',{type:'select',options:['Custom or proprietary','Vendor application','Oracle application','Mixed']}),
+    field(`${prefix}.applicationVendor`,'Application Vendor and Product'),
+    field(`${prefix}.oracleProducts`,'Existing Oracle Products'),
+    field(`${prefix}.targetServices`,'Target OCI Services'), field(`${prefix}.migrationWave`,'Migration Wave'),
+    field(`${prefix}.eta`,'ETA',{type:'date'}), field(`${prefix}.disposition`,'Disposition and Approach',{type:'select',options:DISPOSITIONS}),
+    field(`${prefix}.customerOwner`,'Customer Owner'),
     field(`${prefix}.descriptionMarkdown`,'Description',{type:'textarea',markdown:true,full:true}),
-    `<div class="field full"><label>Target OCI service categories</label>${checklist(`${prefix}.serviceCategories`,SERVICE_CATEGORIES)}</div>`,
-    field(`${prefix}.considerationsMarkdown`,'Additional considerations',{type:'textarea',markdown:true,full:true})
+    `<div class="field full"><label>Target OCI Service Categories</label>${checklist(`${prefix}.serviceCategories`,SERVICE_CATEGORIES)}</div>`,
+    field(`${prefix}.considerationsMarkdown`,'Additional Considerations',{type:'textarea',markdown:true,full:true})
   ],'Add workload');
   const exclusions = repeatCards('exclusions','Out-of-scope item',prefix => [
-    field(`${prefix}.item`,'Item'), field(`${prefix}.futurePhase`,'Planned for future phase?',{type:'select',options:['Yes','No','Unknown']}),
-    field(`${prefix}.description`,'Exclusion description',{type:'textarea',full:true}),
+    field(`${prefix}.item`,'Item'), field(`${prefix}.futurePhase`,'Planned for Future Phase?',{type:'select',options:['Yes','No','Unknown']}),
+    field(`${prefix}.description`,'Exclusion Description',{type:'textarea',full:true}),
     field(`${prefix}.assumptions`,'Assumptions',{type:'textarea',full:true})
   ],'Add out-of-scope item');
   const blockers = repeatCards('blockers','Blocker',prefix => [
-    field(`${prefix}.name`,'Blocker name'), field(`${prefix}.category`,'Category',{type:'select',options:['Service feature','Security enhancement','Compatibility','Capacity','Other']}),
-    field(`${prefix}.impact`,'Blocker impact',{type:'select',options:['Hard requirement','Soft requirement','Unknown']}),
-    field(`${prefix}.status`,'Current status',{type:'select',options:['Open','In progress','Resolved']}),
-    field(`${prefix}.owner`,'PM or owner'), field(`${prefix}.eta`,'Next step ETA',{type:'date'}),
-    field(`${prefix}.ticket`,'Ticket ID or link'),
-    field(`${prefix}.descriptionMarkdown`,'Short description',{type:'textarea',markdown:true,full:true}),
-    field(`${prefix}.nextStepMarkdown`,'Next step',{type:'textarea',markdown:true,full:true})
+    field(`${prefix}.name`,'Blocker Name'), field(`${prefix}.category`,'Category',{type:'select',options:['Service feature','Security enhancement','Compatibility','Capacity','Other']}),
+    field(`${prefix}.impact`,'Blocker Impact',{type:'select',options:['Hard requirement','Soft requirement','Unknown']}),
+    field(`${prefix}.status`,'Current Status',{type:'select',options:['Open','In progress','Resolved']}),
+    field(`${prefix}.owner`,'PM or Owner'), field(`${prefix}.eta`,'Next Step ETA',{type:'date'}),
+    field(`${prefix}.ticket`,'Ticket ID or Link'),
+    field(`${prefix}.descriptionMarkdown`,'Short Description',{type:'textarea',markdown:true,full:true}),
+    field(`${prefix}.nextStepMarkdown`,'Next Step',{type:'textarea',markdown:true,full:true})
   ],'Add blocker');
-  return section('workloads','4. Workloads and migration plan',`<h3>In-scope workloads</h3>${workloads}<h3>Out of scope</h3>${exclusions}<h3>Challenges or concerns</h3>${choiceRows('concerns',CONCERNS)}<h3>Blockers</h3>${blockers}`,'Add as many workloads, exclusions, and blockers as needed.',true);
+  return section('workloads','4. Workloads and Migration Plan',`<h3>In-Scope Workloads</h3>${workloads}<h3>Out of Scope</h3>${exclusions}<h3>Challenges or Concerns</h3>${choiceRows('concerns',CONCERNS)}<h3>Blockers</h3>${blockers}`,'List each workload in scope, its OCI services, approach, wave, and ETA. Mark exclusions and active blockers so Launch understands the planned work and the decisions still open.',true);
 }
 function assessmentSection() {
-  return section('assessment','5. Current state assessment',ASSESSMENT.map(([key,label]) => `<h3 class="subheading">${esc(label)}</h3>${grid([
-    field(`assessment.${key}.currentState`,'Current state',{type:'textarea',markdown:true}),
-    field(`assessment.${key}.targetState`,'Target state',{type:'textarea',markdown:true}),
-    field(`assessment.${key}.requirements`,'Technical requirements or dependencies',{type:'textarea',markdown:true}),
-    field(`assessment.${key}.gaps`,'Gaps or decisions needed',{type:'textarea',markdown:true}),
-    field(`assessment.${key}.customerOwner`,'Customer owner')
-  ])}`).join(''),'Link existing discovery in your descriptions where useful.');
+  return section('assessment','5. Current State Assessment',ASSESSMENT.map(([key,label]) => `<h3 class="subheading">${esc(label)}</h3>${grid([
+    field(`assessment.${key}.currentState`,'Current State',{type:'textarea',markdown:true}),
+    field(`assessment.${key}.targetState`,'Target State',{type:'textarea',markdown:true}),
+    field(`assessment.${key}.requirements`,'Technical Requirements or Dependencies',{type:'textarea',markdown:true}),
+    field(`assessment.${key}.gaps`,'Gaps or Decisions Needed',{type:'textarea',markdown:true}),
+    field(`assessment.${key}.customerOwner`,'Customer Owner')
+  ])}`).join(''),'Summarize the current architecture and proposed OCI direction for applicable areas. Link pursuit discovery instead of rewriting detailed inventories, and flag gaps affecting the launch plan.');
 }
 function readinessSection() {
-  return section('readiness','6. OCI foundation readiness',READINESS.map(([key,label]) => `<h3 class="subheading">${esc(label)}</h3>${grid([
+  return section('readiness','6. OCI Foundation Readiness',READINESS.map(([key,label]) => `<h3 class="subheading">${esc(label)}</h3>${grid([
     field(`readiness.${key}.status`,'Status',{type:'select',options:['Complete','Open','Unknown']}),
     field(`readiness.${key}.owner`,'Owner'),
-    field(`readiness.${key}.evidenceMarkdown`,'Requirement, decision, or evidence',{type:'textarea',markdown:true,full:true})
-  ])}`).join(''),'Record known status and evidence.');
+    field(`readiness.${key}.evidenceMarkdown`,'Requirement, Decision, or Evidence',{type:'textarea',markdown:true,full:true})
+  ])}`).join(''),'Show the status of OCI foundation elements needed for this workload. Name an owner and link evidence for open items, especially access, network, security, operations, and capacity.');
 }
 function raidSection() {
   const raid = repeatCards('raid','RAID item',prefix => [
     field(`${prefix}.type`,'Type',{type:'select',options:['Risk','Assumption','Issue','Dependency','Decision']}),
-    field(`${prefix}.owner`,'Owner'), field(`${prefix}.dueDate`,'Due date',{type:'date'}),
-    field(`${prefix}.evidence`,'Evidence or link'),
+    field(`${prefix}.owner`,'Owner'), field(`${prefix}.dueDate`,'Due Date',{type:'date'}),
+    field(`${prefix}.evidence`,'Evidence or Link'),
     field(`${prefix}.descriptionMarkdown`,'Description',{type:'textarea',markdown:true,full:true}),
-    field(`${prefix}.impactMarkdown`,'Impact or decision required',{type:'textarea',markdown:true,full:true})
+    field(`${prefix}.impactMarkdown`,'Impact or Decision Required',{type:'textarea',markdown:true,full:true})
   ],'Add RAID item');
   const artifacts = ARTIFACTS.map(([key,label]) => `<h3 class="subheading">${esc(label)}</h3>${grid([
     field(`artifacts.${key}.available`,'Available?',{type:'select',options:['Yes','No','Unknown']}),
-    field(`artifacts.${key}.link`,'Location or link'),
-    field(`artifacts.${key}.ownerDue`,'Owner and gap closure date',{full:true})
+    field(`artifacts.${key}.link`,'Location or Link'),
+    field(`artifacts.${key}.ownerDue`,'Owner and Gap Closure Date',{full:true})
   ])}`).join('');
-  return section('raid','7. RAID and artifact links',`<h3>Risks, assumptions, issues, dependencies, decisions</h3>${raid}<h3>Artifact links</h3>${artifacts}`,'Add open items and link existing pursuit material.');
+  return section('raid','7. RAID and Artifact Links',`<h3>Risks, Assumptions, Issues, Dependencies, and Decisions</h3>${raid}<h3>Artifact Links</h3>${artifacts}`,'Capture unresolved risks, assumptions, issues, dependencies, and decisions with owners. Link existing pursuit artifacts and identify who will close any missing input.');
 }
 
 function renderForm() {
   const open = new Set([...app.querySelectorAll('details[data-section][open]')].map(el => el.dataset.section));
   const isEditing = !!editingId;
-  app.innerHTML = `<div class="form-intro"><div><p class="eyebrow">${isEditing ? 'Edit entry' : 'New entry'}</p><h1>${isEditing ? 'Edit workload intake' : 'New workload intake'}</h1><p>Move through the sections in any order. Every field is optional.</p></div><a class="button button-outline" href="#/">Back to catalog</a></div>
+  app.innerHTML = `<div class="form-intro"><div><p class="eyebrow">${isEditing ? 'Edit entry' : 'Workload intake'}</p><h1>Launch Engine Project Intake and Qualification Worksheet</h1><p class="form-subtitle">Phase 1 intake for OCI launches and migrations</p><p>Use this worksheet to transfer the proposed workload, customer contacts, existing pursuit work, and open decisions to Launch Engine. The customer or its implementation partner owns delivery. Launch Engine provides sales architecture guidance and helps coordinate the path to launch. Link existing artifacts where available and identify the owner of any gap needed for the next step.</p></div><a class="button button-outline" href="#/">Back to catalog</a></div>
     <div class="notice">This catalog and its records are public. Use fictional or approved public information.</div>
     <form id="intake-form" novalidate>
       ${profileSection()}${peopleSection()}${outcomesSection()}${workloadSection()}${assessmentSection()}${readinessSection()}${raidSection()}
@@ -271,38 +283,40 @@ function detailPanel(title, body) { return body ? `<section class="panel record-
 function cards(items, render) { return items?.length ? `<div class="item-list">${items.map((item,i)=>`<div class="item-card">${render(item,i)}</div>`).join('')}</div>` : ''; }
 function selectedRows(object, labels, mandate=false) {
   return labels.map((label,i) => {
-    const item = object?.[i]; if (!item?.selected && !item?.note) return '';
+    const item = object?.[i]; if (!item?.selected && !item?.note && !item?.executiveMandate) return '';
     return `<div class="item-card"><span class="tag">${esc(label)}</span>${!item?.selected ? '<span class="tag tag-muted">Not selected</span>' : ''}${mandate && item?.executiveMandate ? '<span class="tag">Executive mandate</span>' : ''}${item?.note ? `<p>${esc(item.note)}</p>` : ''}</div>`;
   }).join('');
 }
 function recordBody(record) {
   const p = record.profile || {};
   const profile = `<div class="detail-grid">${[
-    detail('Customer organization',p.customerOrganization),detail('Workload name',p.workloadName),detail('Engagement type',p.engagementType),
-    detail('Target OCI regions',p.targetRegions),detail('Customer location',p.customerLocation),detail('Industry',p.industry),
-    detail('Customer OCI experience',p.customerOciExperience),detail('Opportunity ID',p.opportunityId),detail('Order number',p.orderNumber),detail('Booking date',p.bookingDate),
-    detail('Account executive',p.accountExecutive),detail('Oracle delivery lead',p.oracleDeliveryLead),
-    detail('Solution architect',p.solutionArchitect),detail('Implementation partner',p.implementationPartner),
-    detail('Target go-live',p.targetGoLive),detail('Planned start',p.plannedStart),
+    detail('Account Name',p.customerOrganization),detail('Workload Name',p.workloadName),detail('Engagement Type',p.engagementType === 'Other' && p.engagementTypeOther ? `Other: ${p.engagementTypeOther}` : p.engagementType),
+    detail('Target OCI Regions',p.targetRegions),detail('Customer Location',p.customerLocation),detail('Industry',p.industry),
+    detail('Opp ID',p.opportunityId),detail('Order #',p.orderNumber),detail('Booking Date',p.bookingDate),
+    detail('Account Exec',p.accountExecutive),detail('Oracle Delivery Lead',p.oracleDeliveryLead),
+    detail('Solution Architect',p.solutionArchitect),detail('Implementation Partner',p.implementationPartner),
+    detail('Target Go-Live',p.targetGoLive),detail('Planned Workload Start',p.plannedStart),
     detail('Description',record.summaryMarkdown,true)
   ].join('')}</div>`;
-  const people = cards(record.stakeholders,(v,i)=>`<h3>Contact ${i+1}</h3><div class="detail-grid">${detail('Name',v.name)}${detail('Role',v.role)}${detail('Contact',v.contact)}${detail('Influence',v.influence)}${detail('Notes',v.notes)}</div>`);
-  const meetings = cards(record.meetings,(v,i)=>`<h3>Meeting ${i+1}</h3><div class="detail-grid">${detail('Date and time',v.dateTime)}${detail('Cadence',v.cadence)}${detail('Topic',v.topic)}${detail('Audience',v.audience)}${detail('Notes',v.notes)}</div>`);
-  const goals = selectedRows(record.goals,goalOptions());
-  const outcomes = `${selectedRows(record.reasons,REASONS,true)}${goals}${record.goalOtherMarkdown ? `<h3>Other goal</h3><div class="markdown-body">${renderMarkdown(record.goalOtherMarkdown)}</div>` : ''}${record.successMeasuresMarkdown ? `<h3>Success measures</h3><div class="markdown-body">${renderMarkdown(record.successMeasuresMarkdown)}</div>` : ''}`;
+  const people = cards(record.stakeholders,(v,i)=>`<h3>Contact ${i+1}</h3><div class="detail-grid">${detail('Name',v.name)}${detail('Role',v.role)}${detail('Email or Contact Info',v.contact)}${detail('Influence on Workload',v.influence)}${detail('Additional Notes',v.notes)}</div>`);
+  const meetings = cards(record.meetings,(v,i)=>`<h3>Cadence Call ${i+1}</h3><div class="detail-grid">${detail('Day',v.day)}${detail('Time',v.time)}${detail('Time Zone',v.timeZone === 'Other' && v.timeZoneOther ? `Other: ${v.timeZoneOther}` : v.timeZone)}${!v.day && !v.time ? detail('Prior Date and Time',v.dateTime) : ''}${detail('Cadence',v.cadence === 'Other' && v.cadenceOther ? `Other: ${v.cadenceOther}` : v.cadence)}${detail('Topic',v.topic)}${detail('Customer Audience',v.audience)}${detail('Additional Notes',v.notes)}</div>`);
+  const reasons = selectedRows(record.reasons,REASONS,true);
+  const goals = selectedRows(record.goals,goalOptions(),true);
+  const success = cards(record.successMeasures,(v,i)=>`<h3>${esc(v.name || `Success Measure ${i+1}`)}</h3><div class="detail-grid">${detail('Short Description',v.shortDescription)}${detail('Impacts Go/No-Go',v.impactsGoNoGo)}${detail('Measurable Metric',v.isMeasurableMetric)}${v.isMeasurableMetric==='Yes'?detail('Metric Description',v.metricDescription)+detail('Target Goal',v.targetGoal):''}</div>`);
+  const outcomes = `${reasons ? `<h3>Reasons to Migrate</h3>${reasons}` : ''}${goals ? `<h3>Goals and Improvements</h3>${goals}` : ''}${record.goalOtherMarkdown ? `<h3>Other Goal</h3><div class="markdown-body">${renderMarkdown(record.goalOtherMarkdown)}</div>` : ''}${success ? `<h3>Success Measures</h3>${success}` : ''}${record.successMeasuresMarkdown ? `<h3>Earlier Success Measures</h3><div class="markdown-body">${renderMarkdown(record.successMeasuresMarkdown)}</div>` : ''}`;
   const workloads = cards(record.workloads,(v,i)=>`<h3>${esc(v.name || `Workload ${i+1}`)}</h3><div class="detail-grid">${detail('Business units',v.businessUnits)}${detail('Geographies',v.geographies)}${detail('Technologies in use',v.sourceTechnologies)}${detail('Application type',v.applicationType)}${detail('Vendor and product',v.applicationVendor)}${detail('Oracle products',v.oracleProducts)}${detail('Target OCI services',v.targetServices)}${detail('Service categories',(v.serviceCategories||[]).join(', '))}${detail('Wave',v.migrationWave)}${detail('ETA',v.eta)}${detail('Approach',v.disposition)}${detail('Customer owner',v.customerOwner)}${detail('Description',v.descriptionMarkdown,true)}${detail('Considerations',v.considerationsMarkdown,true)}</div>`);
   const exclusions = cards(record.exclusions,(v,i)=>`<h3>${esc(v.item || `Out-of-scope item ${i+1}`)}</h3><div class="detail-grid">${detail('Future phase',v.futurePhase)}${detail('Description',v.description)}${detail('Assumptions',v.assumptions)}</div>`);
-  const concerns = selectedRows(record.concerns,CONCERNS);
-  const blockers = cards(record.blockers,(v,i)=>`<h3>${esc(v.name || `Blocker ${i+1}`)}</h3><div class="detail-grid">${detail('Category',v.category)}${detail('Impact',v.impact)}${detail('Status',v.status)}${detail('Owner',v.owner)}${detail('ETA',v.eta)}${detail('Ticket',v.ticket)}${detail('Description',v.descriptionMarkdown,true)}${detail('Next step',v.nextStepMarkdown,true)}</div>`);
+  const concerns = selectedRows(record.concerns,CONCERNS,true);
+  const blockers = cards(record.blockers,(v,i)=>`<h3>${esc(v.name || `Blocker ${i+1}`)}</h3><div class="detail-grid">${detail('Category',v.category === 'Other' && v.categoryOther ? `Other: ${v.categoryOther}` : v.category)}${detail('Impact',v.impact)}${detail('Status',v.status)}${detail('Owner',v.owner)}${detail('ETA',v.eta)}${detail('Ticket',v.ticket)}${detail('Description',v.descriptionMarkdown,true)}${detail('Next Step',v.nextStepMarkdown,true)}</div>`);
   const assessment = ASSESSMENT.map(([key,label])=>{const v=record.assessment?.[key]||{};const d=[detail('Current state',v.currentState,true),detail('Target state',v.targetState,true),detail('Requirements or dependencies',v.requirements,true),detail('Gaps or decisions',v.gaps,true),detail('Customer owner',v.customerOwner)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
   const readiness = READINESS.map(([key,label])=>{const v=record.readiness?.[key]||{};const d=[detail('Status',v.status),detail('Owner',v.owner),detail('Evidence',v.evidenceMarkdown,true)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
   const raid = cards(record.raid,(v,i)=>`<h3>${esc(v.type || `RAID item ${i+1}`)}</h3><div class="detail-grid">${detail('Description',v.descriptionMarkdown,true)}${detail('Impact or decision',v.impactMarkdown,true)}${detail('Owner',v.owner)}${detail('Due date',v.dueDate)}${detail('Evidence',v.evidence)}</div>`);
   const artifacts = ARTIFACTS.map(([key,label])=>{const v=record.artifacts?.[key]||{};const d=[detail('Available',v.available),detail('Link',v.link),detail('Owner and date',v.ownerDue)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
   return [
-    detailPanel('1. Workload profile',profile), detailPanel('2. People and meetings',`${people}${meetings}`),
-    detailPanel('3. Business case and success',outcomes), detailPanel('4. Workloads and migration plan',`${workloads}${exclusions}${concerns}${blockers}`),
-    detailPanel('5. Current state assessment',assessment), detailPanel('6. OCI foundation readiness',readiness),
-    detailPanel('7. RAID and artifact links',`${raid}${artifacts}`)
+    detailPanel('1. Workload Profile',profile), detailPanel('2. People and Meetings',`${people ? `<h3>Key Customer Contacts</h3>${people}` : ''}${meetings ? `<h3>Customer Cadence Calls</h3>${meetings}` : ''}`),
+    detailPanel('3. Business Case and Success',outcomes), detailPanel('4. Workloads and Migration Plan',`${workloads}${exclusions}${concerns}${blockers}`),
+    detailPanel('5. Current State Assessment',assessment), detailPanel('6. OCI Foundation Readiness',readiness),
+    detailPanel('7. RAID and Artifact Links',`${raid}${artifacts}`)
   ].join('');
 }
 
@@ -350,11 +364,11 @@ async function updateAuth() {
   catch { sessionStorage.removeItem('launchSession');auth='';authButton.textContent='Sign in with GitHub';authButton.onclick=login; }
 }
 async function catalog() {
-  app.innerHTML=`<div class="page-heading"><div><p class="eyebrow">Workload catalog</p><h1>Launch Engine intake</h1><p>Review submitted workloads and open an entry for its full details.</p></div><a class="button" href="#/new">+ New entry</a></div><div class="panel loading-card"><div class="loading">Loading entries…</div></div>`;
+  app.innerHTML=`<div class="page-heading catalog-hero"><div><p class="eyebrow">Launch Engine Workload Catalog</p><h1>Workload handoffs in one place.</h1><p>Review proposed OCI launches and migrations. Open an entry for the full handoff details.</p></div><a class="button" href="#/new">Create an Entry</a></div><section class="catalog-content"><div class="section-title"><p class="eyebrow">Browse Entries</p><h2>Workload Catalog</h2></div><div class="panel loading-card"><div class="loading">Loading entries…</div></div></section>`;
   try {
     const {entries}=await api('/api/entries');
     const rows=entries.map(entry=>`<tr><td><a href="#/entry/${encodeURIComponent(entry.id)}">${esc(entry.workloadName || 'Untitled entry')}</a></td><td>${esc(entry.customerOrganization || '—')}</td><td>${esc(entry.engagementType || '—')}</td><td>${esc(entry.targetRegions || '—')}</td><td>${esc(entry.targetGoLive || '—')}</td><td>${esc((entry.updatedAt||'').slice(0,10))}</td></tr>`).join('');
-    app.querySelector('.loading-card').innerHTML=`<div class="toolbar"><span class="count" id="entry-count">${entries.length} ${entries.length===1?'entry':'entries'}</span><label class="search"><span class="sr-only">Search entries</span><input id="catalog-search" type="search" placeholder="Search customer or workload"></label></div><div class="table-wrap"><table class="catalog-table"><thead><tr><th>Workload</th><th>Customer</th><th>Type</th><th>OCI region</th><th>Target go-live</th><th>Updated</th></tr></thead><tbody>${rows || `<tr><td colspan="6" class="empty">No entries yet. Start with a new intake.</td></tr>`}</tbody></table></div>`;
+    app.querySelector('.loading-card').innerHTML=`<div class="toolbar"><span class="count" id="entry-count">${entries.length} ${entries.length===1?'entry':'entries'}</span><label class="search"><span class="sr-only">Search entries</span><input id="catalog-search" type="search" placeholder="Search account or workload"></label></div><div class="table-wrap"><table class="catalog-table"><thead><tr><th>Workload</th><th>Account</th><th>Type</th><th>OCI Region</th><th>Target Go-Live</th><th>Updated</th></tr></thead><tbody>${rows || `<tr><td colspan="6" class="empty">No entries yet. Start with a new intake.</td></tr>`}</tbody></table></div>`;
     app.querySelector('#catalog-search').addEventListener('input',event=>{
       const query=event.target.value.toLowerCase(); let visible=0;
       app.querySelectorAll('.catalog-table tbody tr').forEach(row=>{const show=row.textContent.toLowerCase().includes(query);row.hidden=!show;if(show)visible++;});
@@ -413,16 +427,20 @@ async function route() {
 
 app.addEventListener('input',event=>{
   const el=event.target;
-  if(el.dataset.path && draft){setPath(draft,el.dataset.path,el.type==='checkbox'?el.checked:el.value);if(el.dataset.markdown){const preview=app.querySelector(`[data-preview-for="${CSS.escape(el.dataset.path)}"]`);if(preview)preview.innerHTML=renderMarkdown(el.value);}}
+  if(el.dataset.path && draft)setPath(draft,el.dataset.path,el.type==='checkbox'?el.checked:el.value);
+  if(el.dataset.otherPath && draft){const detail=app.querySelector(`[data-other-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Other';if(el.value!=='Other')setPath(draft,el.dataset.otherPath,'');}
+  if(el.dataset.revealOnYes){const detail=app.querySelector(`[data-reveal-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Yes';}
 });
 app.addEventListener('change',event=>{
   const el=event.target;
   if(el.dataset.path && draft)setPath(draft,el.dataset.path,el.type==='checkbox'?el.checked:el.value);
+  if(el.dataset.otherPath && draft){const detail=app.querySelector(`[data-other-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Other';if(el.value!=='Other')setPath(draft,el.dataset.otherPath,'');}
+  if(el.dataset.revealOnYes){const detail=app.querySelector(`[data-reveal-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Yes';}
   if(el.dataset.arrayPath && draft){const list=getPath(draft,el.dataset.arrayPath)||[];const next=el.checked?[...new Set([...list,el.dataset.option])]:list.filter(x=>x!==el.dataset.option);setPath(draft,el.dataset.arrayPath,next);}
 });
 app.addEventListener('click',event=>{
   const add=event.target.closest('[data-add]');
-  if(add&&draft){const list=getPath(draft,add.dataset.add)||[];list.push(JSON.parse(add.dataset.template||'{}'));setPath(draft,add.dataset.add,list);renderForm();app.querySelector(`[data-section="${add.dataset.add==='workloads'||add.dataset.add==='blockers'||add.dataset.add==='exclusions'?'workloads':add.dataset.add==='stakeholders'||add.dataset.add==='meetings'?'people':'raid'}"]`).open=true;return;}
+  if(add&&draft){const list=getPath(draft,add.dataset.add)||[];list.push(JSON.parse(add.dataset.template||'{}'));setPath(draft,add.dataset.add,list);renderForm();app.querySelector(`[data-section="${add.dataset.add==='workloads'||add.dataset.add==='blockers'||add.dataset.add==='exclusions'?'workloads':add.dataset.add==='stakeholders'||add.dataset.add==='meetings'?'people':add.dataset.add==='successMeasures'?'outcomes':'raid'}"]`).open=true;return;}
   const remove=event.target.closest('[data-remove]');
   if(remove&&draft){const list=getPath(draft,remove.dataset.remove)||[];list.splice(Number(remove.dataset.index),1);renderForm();}
 });
