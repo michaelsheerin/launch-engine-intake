@@ -93,6 +93,10 @@ main{padding:0 0 72px}
 .choice-mobile-label{display:none}
 .choice-note{width:100%;min-width:0;height:36px;min-height:36px;border:1px solid #b9c6d3;border-radius:4px;padding:7px 9px;background:#fff;font-size:13px;line-height:18px;resize:none;overflow:hidden}
 .choice-note:focus{outline:2px solid #89acd4;outline-offset:1px}
+.field textarea.auto-grow{resize:none;overflow:hidden}
+.field textarea.compact-autogrow{height:40px;min-height:40px}
+.service-categories .choice-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.conditional-date .field{max-width:320px}
 .choice-grid .checkbox-line{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:4px;background:#fbfcfe;padding:10px 12px;cursor:pointer}
 .choice-grid .checkbox-line:has(input:checked){border-color:#90aecf;background:#edf4fb;color:var(--blue)}
 .metric-fields{background:#f3f7fb;border-left:2px solid #9cb8d7;padding:16px;margin-top:3px}
@@ -102,3 +106,4 @@ main{padding:0 0 72px}
 .metric-fields .field textarea{height:80px;min-height:80px}
 @media(max-width:1050px){.choice-table-head{display:none}.choice-table-row{grid-template-columns:1fr 1fr;gap:10px}.choice-label,.choice-note{grid-column:1/-1}.choice-check{justify-content:flex-start;gap:8px}.choice-mobile-label{display:inline;font-size:12px;color:var(--muted)}.goal-group{grid-template-columns:36px minmax(0,1fr)}}
 @media(max-width:760px){.shell{width:min(100% - 28px,1120px)}.header-inner{min-height:auto;padding:14px 0}.top-nav{gap:8px}.top-nav .nav-cta{padding:8px 11px}.page-heading,.form-intro,.record-header{padding:42px 0;margin-bottom:34px}.catalog-hero{min-height:280px}.page-heading h1,.form-intro h1,.record-header h1{font-size:36px}.page-heading p,.form-intro p{font-size:15px}.form-intro{grid-template-columns:1fr}.section-body{padding:18px}.footer-inner{align-items:flex-start}}
+@media(max-width:760px){.service-categories .choice-grid{grid-template-columns:1fr}}
