@@ -22,11 +22,12 @@ const CONCERNS = [
   'Strict data loss and availability SLAs', 'Critical performance requirements', 'Other'
 ];
 const ASSESSMENT = [
-  ['applications', 'Applications, servers, VMs, and containers'],
-  ['data', 'Database, storage, and data integration'],
-  ['network', 'Network topology'],
-  ['security', 'Security topology'],
-  ['resilience', 'HA, DR, backup, SLAs, RTO, and RPO']
+  ['applications', 'Applications, Servers, VMs, and Containers'],
+  ['data', 'Database, Storage, and Data Integration'],
+  ['network', 'Network Topology'],
+  ['security', 'Security Topology'],
+  ['resilience', 'HA, DR, Backup, SLAs, RTO, and RPO'],
+  ['other', 'Other']
 ];
 const READINESS = [
   ['tenancy', 'Tenancy model, compartments, naming, tagging, cost ownership'],
@@ -62,7 +63,7 @@ function blankEntry() {
     profile: {}, summaryMarkdown: '', stakeholders: [], meetings: [],
     reasons: {}, reasonOtherMarkdown: '', goals: {}, goalOtherMarkdown: '', successMeasures: [], workloads: [], exclusions: [],
     concerns: {}, concernOtherMarkdown: '', blockers: [],
-    assessment: {}, readiness: {}, raid: [], artifacts: {}
+    assessment: {}, readiness: {}, artifacts: {}
   };
 }
 function esc(value) {
@@ -230,35 +231,39 @@ function workloadSection() {
   return section('workloads','4. Workloads and Migration Plan',subsection('workloads-in-scope','In-Scope Workloads',workloads)+subsection('workloads-out-of-scope','Out-of-Scope Items',exclusions)+subsection('workloads-concerns','Challenges and Risks',choiceRows('concerns',CONCERNS.slice(0,-1))+concernOther)+subsection('workloads-blockers','Blockers',blockers),'List each workload in scope, its OCI services, migration approach, planned phase, and estimated start date. Mark exclusions and active blockers so Launch understands the planned work and the decisions still open.',true);
 }
 function assessmentSection() {
-  return section('assessment','5. Current State Assessment',ASSESSMENT.map(([key,label]) => subsection(`assessment-${key}`,label,grid([
-    field(`assessment.${key}.currentState`,'Current State',{type:'textarea',markdown:true}),
-    field(`assessment.${key}.targetState`,'Target State',{type:'textarea',markdown:true}),
-    field(`assessment.${key}.requirements`,'Technical Requirements or Dependencies',{type:'textarea',markdown:true}),
-    field(`assessment.${key}.gaps`,'Gaps or Decisions Needed',{type:'textarea',markdown:true}),
-    field(`assessment.${key}.customerOwner`,'Customer Owner')
-  ]))).join(''),'Summarize the current architecture and proposed OCI direction for applicable areas. Link pursuit discovery instead of rewriting detailed inventories, and flag gaps affecting the launch plan.');
+  return section('assessment','5. Current and Target State Assessment',ASSESSMENT.map(([key,label]) => subsection(`assessment-${key}`,label,grid([
+    field(`assessment.${key}.currentState`,'Current State',{type:'textarea',full:true,autoGrow:true}),
+    field(`assessment.${key}.targetState`,'Target State',{type:'textarea',full:true,autoGrow:true}),
+    field(`assessment.${key}.requirements`,'Technical Requirements or Dependencies',{type:'textarea',full:true,autoGrow:true}),
+    field(`assessment.${key}.gaps`,'Gaps or Decisions Needed',{type:'textarea',full:true,autoGrow:true}),
+    field(`assessment.${key}.customerOwner`,'Customer Owner'),
+    field(`assessment.${key}.architectureDiagram`,'Link to Architecture Diagram',{type:'url'})
+  ]),key === 'other'
+    ? 'Please explain in detail the current and future state of any other workload components, as well as any key technical requirements, dependencies, or gaps.'
+    : `Please explain in detail the current and future state of the workloads' ${label.toLowerCase().replace(/\bvms\b/g,'VMs').replace(/\bha\b/g,'HA').replace(/\bdr\b/g,'DR').replace(/\bslas\b/g,'SLAs').replace(/\brto\b/g,'RTO').replace(/\brpo\b/g,'RPO')}, as well as any key technical requirements, dependencies, or gaps.`)).join(''),'Describe the current and target architecture for each applicable area. Include key requirements, dependencies, and open decisions, and link a diagram when available.');
 }
 function readinessSection() {
-  return section('readiness','6. OCI Foundation Readiness',READINESS.map(([key,label]) => subsection(`readiness-${key}`,label,grid([
-    field(`readiness.${key}.status`,'Status',{type:'select',options:['Complete','Open','Unknown']}),
-    field(`readiness.${key}.owner`,'Owner'),
-    field(`readiness.${key}.evidenceMarkdown`,'Requirement, Decision, or Evidence',{type:'textarea',markdown:true,full:true})
-  ]))).join(''),'Show the status of OCI foundation elements needed for this workload. Name an owner and link evidence for open items, especially access, network, security, operations, and capacity.');
+  const rows = READINESS.map(([key,label]) => {
+    const prefix = `readiness.${key}`;
+    const status = getPath(draft,`${prefix}.status`);
+    const owner = getPath(draft,`${prefix}.owner`) || '';
+    const requirement = getPath(draft,`${prefix}.evidenceMarkdown`) || '';
+    return `<div class="choice-table-row readiness-row"><span class="choice-label">${esc(label)}</span><label class="choice-check"><input type="checkbox" data-readiness-status="${esc(`${prefix}.status`)}" aria-label="Complete: ${esc(label)}" ${status === 'Complete' || status === true ? 'checked' : ''}><span class="choice-mobile-label">Complete?</span></label><label class="readiness-owner-field"><span class="choice-mobile-label">Owner</span><input type="text" data-path="${esc(`${prefix}.owner`)}" aria-label="Owner for ${esc(label)}" value="${esc(owner)}"></label><label class="readiness-requirement-field"><span class="choice-mobile-label">Requirement</span><textarea class="choice-note auto-grow" rows="1" data-path="${esc(`${prefix}.evidenceMarkdown`)}" aria-label="Requirement for ${esc(label)}" placeholder="Add requirement details">${esc(requirement)}</textarea></label></div>`;
+  }).join('');
+  const table = `<div class="choice-table readiness-table"><div class="choice-table-head"><span>OCI Foundation Element</span><span>Complete?</span><span>Owner</span><span>Requirement</span></div>${rows}</div>`;
+  return section('readiness','6. OCI Foundation Readiness',table,'Show the OCI foundation elements needed for this workload. Mark completed elements, name an owner, and describe any requirements still to address.');
 }
-function raidSection() {
-  const raid = repeatCards('raid','RAID item',prefix => [
-    field(`${prefix}.type`,'Type',{type:'select',options:['Risk','Assumption','Issue','Dependency','Decision']}),
-    field(`${prefix}.owner`,'Owner'), field(`${prefix}.dueDate`,'Due Date',{type:'date'}),
-    field(`${prefix}.evidence`,'Evidence or Link'),
-    field(`${prefix}.descriptionMarkdown`,'Description',{type:'textarea',markdown:true,full:true}),
-    field(`${prefix}.impactMarkdown`,'Impact or Decision Required',{type:'textarea',markdown:true,full:true})
-  ],'Add RAID item');
-  const artifacts = ARTIFACTS.map(([key,label]) => subsection(`artifact-${key}`,label,grid([
-    field(`artifacts.${key}.available`,'Available?',{type:'select',options:['Yes','No','Unknown']}),
-    field(`artifacts.${key}.link`,'Location or Link'),
-    field(`artifacts.${key}.ownerDue`,'Owner and Gap Closure Date',{full:true})
-  ]))).join('');
-  return section('raid','7. RAID and Artifact Links',subsection('raid-items','Risks, Assumptions, Issues, Dependencies, and Decisions',raid)+subsection('raid-artifacts','Artifact Links',artifacts),'Capture unresolved risks, assumptions, issues, dependencies, and decisions with owners. Link existing pursuit artifacts and identify who will close any missing input.');
+function artifactOwner(item) {
+  return item.owner ?? String(item.ownerDue || '').replace(/,\s*\d{4}-\d{2}-\d{2}$/, '');
+}
+function artifactSection() {
+  const rows = ARTIFACTS.map(([key,label]) => {
+    const item = draft.artifacts?.[key] || {};
+    const owner = artifactOwner(item);
+    return `<div class="choice-table-row artifact-row"><span class="choice-label">${esc(label)}</span><label class="artifact-input-field"><span class="choice-mobile-label">Location / Link</span><input type="text" data-path="${esc(`artifacts.${key}.link`)}" aria-label="Location or link for ${esc(label)}" value="${esc(item.link || '')}"></label><label class="artifact-input-field"><span class="choice-mobile-label">Owner</span><input type="text" data-path="${esc(`artifacts.${key}.owner`)}" aria-label="Owner for ${esc(label)}" value="${esc(owner)}"></label></div>`;
+  }).join('');
+  const table = `<div class="choice-table artifact-table"><div class="choice-table-head"><span>Artifact</span><span>Location / Link</span><span>Owner</span></div>${rows}</div>`;
+  return section('artifacts','7. Artifact Links',table,'Link existing pursuit artifacts and identify the owner for each item. Add a location or link when an artifact is available.');
 }
 
 function autoGrowNote(el) {
@@ -274,7 +279,7 @@ function renderForm() {
   app.innerHTML = `<div class="form-intro"><div><p class="eyebrow">${isEditing ? 'Edit entry' : 'Workload intake'}</p><h1>Launch Engine Project Intake and Qualification Worksheet</h1><p class="form-subtitle">Phase 1 intake for OCI launches and migrations</p><p>Use this worksheet to transfer the proposed workload, customer contacts, existing pursuit work, and open decisions to Launch Engine. The customer or its implementation partner owns delivery. Launch Engine provides sales architecture guidance and helps coordinate the path to launch. Link existing artifacts where available and identify the owner of any gap needed for the next step.</p></div><a class="button button-outline" href="#/">Back to catalog</a></div>
     <div class="notice">This catalog and its records are public. Use fictional or approved public information.</div>
     <form id="intake-form" novalidate>
-      ${profileSection()}${peopleSection()}${outcomesSection()}${workloadSection()}${assessmentSection()}${readinessSection()}${raidSection()}
+      ${profileSection()}${peopleSection()}${outcomesSection()}${workloadSection()}${assessmentSection()}${readinessSection()}${artifactSection()}
       <div class="form-actions"><span class="muted">Every field is optional. Markdown works in long-text fields.</span><div class="actions"><a class="button button-outline" href="#/">Cancel</a><button class="button" type="submit">${isEditing ? 'Save changes' : 'Submit entry'}</button></div></div>
     </form>`;
   if (open.size) app.querySelectorAll('details[data-section]').forEach(el => { el.open = open.has(el.dataset.section); });
@@ -305,9 +310,20 @@ function renderMarkdown(value) {
   return sanitizeHtml(window.marked.parse(String(value), {gfm:true,breaks:true}));
 }
 function valueText(value) { return value == null || value === '' ? '' : esc(value).replace(/\n/g,'<br>'); }
-function detail(label, value, markdown=false) {
+function detail(label, value, markdown=false, full=false) {
   if (value == null || value === '') return '';
-  return `<div class="detail"><dt>${esc(label)}</dt><dd class="${markdown ? 'markdown-body' : ''}">${markdown ? renderMarkdown(value) : valueText(value)}</dd></div>`;
+  return `<div class="detail ${full ? 'full' : ''}"><dt>${esc(label)}</dt><dd class="${markdown ? 'markdown-body' : ''}">${markdown ? renderMarkdown(value) : valueText(value)}</dd></div>`;
+}
+function linkText(value) {
+  if (!value) return '';
+  let url;
+  try { url = new URL(String(value)); } catch { return valueText(value); }
+  if (!['https:', 'http:'].includes(url.protocol)) return valueText(value);
+  return `<a href="${esc(url.href)}" target="_blank" rel="noopener noreferrer">${esc(value)}</a>`;
+}
+function detailLink(label, value) {
+  if (!value) return '';
+  return `<div class="detail"><dt>${esc(label)}</dt><dd>${linkText(value)}</dd></div>`;
 }
 function detailPanel(title, body) { return body ? `<section class="panel record-section"><h2>${esc(title)}</h2>${body}</section>` : ''; }
 function cards(items, render) { return items?.length ? `<div class="item-list">${items.map((item,i)=>`<div class="item-card">${render(item,i)}</div>`).join('')}</div>` : ''; }
@@ -338,15 +354,16 @@ function recordBody(record) {
   const exclusions = cards(record.exclusions,(v,i)=>`<h3>${esc(v.item || `Out-of-scope item ${i+1}`)}</h3><div class="detail-grid">${detail('Planned for Future Phase?',v.futurePhase)}${v.futurePhase==='Yes'?detail('Estimated Target Date',v.estimatedTargetDate):''}${detail('Exclusion Reasoning',v.description)}${detail('Future Assumptions to Consider',v.assumptions)}</div>`);
   const concerns = selectedRows(record.concerns,CONCERNS,true);
   const blockers = cards(record.blockers,(v,i)=>`<h3>${esc(v.name || `Blocker ${i+1}`)}</h3><div class="detail-grid">${detail('Category',v.category === 'Other' && v.categoryOther ? `Other: ${v.categoryOther}` : v.category)}${detail('Impact',v.impact)}${detail('Short Description',v.descriptionMarkdown,true)}${detail('PM or Owner',v.owner)}${detail('Ticket ID or Link',v.ticket)}${detail('Resolution ETA',v.eta)}${detail('Next Steps',v.nextStepMarkdown,true)}</div>`);
-  const assessment = ASSESSMENT.map(([key,label])=>{const v=record.assessment?.[key]||{};const d=[detail('Current state',v.currentState,true),detail('Target state',v.targetState,true),detail('Requirements or dependencies',v.requirements,true),detail('Gaps or decisions',v.gaps,true),detail('Customer owner',v.customerOwner)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
-  const readiness = READINESS.map(([key,label])=>{const v=record.readiness?.[key]||{};const d=[detail('Status',v.status),detail('Owner',v.owner),detail('Evidence',v.evidenceMarkdown,true)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
-  const raid = cards(record.raid,(v,i)=>`<h3>${esc(v.type || `RAID item ${i+1}`)}</h3><div class="detail-grid">${detail('Description',v.descriptionMarkdown,true)}${detail('Impact or decision',v.impactMarkdown,true)}${detail('Owner',v.owner)}${detail('Due date',v.dueDate)}${detail('Evidence',v.evidence)}</div>`);
-  const artifacts = ARTIFACTS.map(([key,label])=>{const v=record.artifacts?.[key]||{};const d=[detail('Available',v.available),detail('Link',v.link),detail('Owner and date',v.ownerDue)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
+  const assessment = ASSESSMENT.map(([key,label])=>{const v=record.assessment?.[key]||{};const d=[detail('Current State',v.currentState,true,true),detail('Target State',v.targetState,true,true),detail('Technical Requirements or Dependencies',v.requirements,true,true),detail('Gaps or Decisions Needed',v.gaps,true,true),detail('Customer Owner',v.customerOwner),detailLink('Link to Architecture Diagram',v.architectureDiagram)].join('');return d?`<h3>${esc(label)}</h3><div class="detail-grid">${d}</div>`:'';}).join('');
+  const readinessRows = READINESS.map(([key,label])=>{const v=record.readiness?.[key]||{};const complete=v.status === 'Complete' || v.status === true ? 'Yes' : v.status === 'Open' || v.status === false ? 'No' : v.status || '';return `<tr><th scope="row">${esc(label)}</th><td>${esc(complete)}</td><td>${valueText(v.owner)}</td><td class="markdown-body">${renderMarkdown(v.evidenceMarkdown)}</td></tr>`;}).join('');
+  const readiness = `<div class="table-wrap"><table class="catalog-table readiness-view"><thead><tr><th>OCI Foundation Element</th><th>Complete?</th><th>Owner</th><th>Requirement</th></tr></thead><tbody>${readinessRows}</tbody></table></div>`;
+  const artifactRows = ARTIFACTS.map(([key,label])=>{const v=record.artifacts?.[key]||{};return `<tr><th scope="row">${esc(label)}</th><td>${linkText(v.link)}</td><td>${valueText(artifactOwner(v))}</td></tr>`;}).join('');
+  const artifacts = `<div class="table-wrap"><table class="catalog-table artifact-view"><thead><tr><th>Artifact</th><th>Location / Link</th><th>Owner</th></tr></thead><tbody>${artifactRows}</tbody></table></div>`;
   return [
     detailPanel('1. Workload Profile',profile), detailPanel('2. People and Meetings',`${people ? `<h3>Key Customer Contacts</h3>${people}` : ''}${meetings ? `<h3>Customer Cadence Calls</h3>${meetings}` : ''}`),
     detailPanel('3. Business Case and Success',outcomes), detailPanel('4. Workloads and Migration Plan',`${workloads}${exclusions}${concerns ? `<h3>Challenges and Risks</h3>${concerns}` : ''}${record.concernOtherMarkdown ? `<h3>Other Challenge or Risk</h3><div class="markdown-body">${renderMarkdown(record.concernOtherMarkdown)}</div>` : ''}${blockers}`),
-    detailPanel('5. Current State Assessment',assessment), detailPanel('6. OCI Foundation Readiness',readiness),
-    detailPanel('7. RAID and Artifact Links',`${raid}${artifacts}`)
+    detailPanel('5. Current and Target State Assessment',assessment), detailPanel('6. OCI Foundation Readiness',readiness),
+    detailPanel('7. Artifact Links',artifacts)
   ].join('');
 }
 
@@ -458,6 +475,7 @@ async function route() {
 app.addEventListener('input',event=>{
   const el=event.target;
   if(el.matches('textarea.auto-grow'))autoGrowNote(el);
+  if(el.dataset.readinessStatus && draft)setPath(draft,el.dataset.readinessStatus,el.checked?'Complete':'Open');
   if(el.dataset.path && draft)setPath(draft,el.dataset.path,el.type==='checkbox'?el.checked:el.value);
   if(el.dataset.otherPath && draft){const detail=app.querySelector(`[data-other-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Other';if(el.value!=='Other')setPath(draft,el.dataset.otherPath,'');}
   if(el.dataset.revealOnYes){const detail=app.querySelector(`[data-reveal-for="${CSS.escape(el.dataset.path)}"]`);if(detail)detail.hidden=el.value!=='Yes';if(el.dataset.path.endsWith('.futurePhase')&&el.value!=='Yes'){setPath(draft,el.dataset.path.replace(/\.futurePhase$/,'.estimatedTargetDate'),'');const date=detail?.querySelector('input[type="date"]');if(date)date.value='';}}
