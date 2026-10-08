@@ -1,1 +1,35 @@
+name: Sync public intake data
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/entries/**'
+      - 'scripts/sync_public_data.py'
+      - '.github/workflows/sync-public-data.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-public-data
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: python3 scripts/sync_public_data.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data
+          if ! git diff --cached --quiet; then
+            git commit -m "Sync public intake data"
+            git push
+          fi
 
