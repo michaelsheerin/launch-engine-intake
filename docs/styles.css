@@ -90,6 +90,23 @@ main{padding:0 0 72px}
 .editable-table .success-check{text-align:center;vertical-align:middle}
 .success-check input{width:20px;height:20px;accent-color:var(--blue);cursor:pointer}
 .field textarea.short-textarea{height:64px;min-height:64px}
+.workload-card{border:2px solid #b9cfdd;background:#fff;padding:18px;margin:0 0 22px}
+.workload-card>.repeat-head{background:#e8f3f5;border-bottom:1px solid #b9cfdd;margin:-18px -18px 18px;padding:13px 18px}
+.workload-card>.repeat-head h3{font-size:18px}
+.workload-card>.grid{margin-bottom:22px}
+.workload-risks>summary{background:#fff5ea;border-left:4px solid #a46d2e}
+.workload-blockers>summary{background:#fff0f0;color:#812323;border-left:4px solid #a52828}
+.tech-stack-table{min-width:0;table-layout:fixed}
+.tech-stack-table th:first-child{width:23%}
+.tech-stack-table tbody th{font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;vertical-align:middle;background:#f3f7fb}
+.blockers-table{min-width:1400px}
+.blockers-table th:nth-child(1){width:180px}
+.blockers-table th:nth-child(2){width:90px}
+.blockers-table th:nth-child(3){width:240px}
+.blockers-table th:nth-child(4){width:165px}
+.blockers-table th:nth-child(5){width:180px}
+.blockers-table th:nth-child(6){width:145px}
+.blockers-table th:nth-child(7){width:260px}
 .choice-table{border:1px solid var(--line);border-radius:4px;overflow:hidden;margin:10px 0 24px}
 .choice-table-head,.choice-table-row{display:grid;grid-template-columns:minmax(200px,1fr) 126px minmax(360px,2fr);gap:14px;align-items:center;padding:11px 14px}
 .choice-table-head{background:#edf3f8;color:var(--blue);font-size:11px;font-weight:750;letter-spacing:.05em;text-transform:uppercase}
@@ -111,7 +128,7 @@ main{padding:0 0 72px}
 .choice-mobile-label{display:none}
 .choice-note{width:100%;min-width:0;height:36px;min-height:36px;border:1px solid #b9c6d3;border-radius:4px;padding:7px 9px;background:#fff;font-size:13px;line-height:18px;resize:none;overflow:hidden}
 .choice-note:focus{outline:2px solid #89acd4;outline-offset:1px}
-.readiness-table .choice-table-head,.readiness-table .choice-table-row{grid-template-columns:minmax(220px,1.35fr) 100px minmax(160px,1fr) minmax(290px,1.7fr)}
+.readiness-table .choice-table-head,.readiness-table .choice-table-row{grid-template-columns:minmax(220px,1.35fr) 100px minmax(290px,2fr)}
 .readiness-owner-field,.readiness-requirement-field{min-width:0}
 .readiness-owner-field input{width:100%;height:36px;border:1px solid #b9c6d3;border-radius:4px;padding:7px 9px;background:#fff;font-size:13px}
 .readiness-owner-field input:focus{outline:2px solid #89acd4;outline-offset:1px}
@@ -144,14 +161,14 @@ main{padding:0 0 72px}
 .record-section{border:1px solid #cbd8e5;border-left:0;padding:0;margin:24px 0 32px;background:#fff}
 .record-section>h2{margin:0;padding:17px 22px;background:var(--blue);color:#fff;font-size:20px;line-height:1.3;letter-spacing:-.01em}
 .record-subsection{margin:20px;border:1px solid #d2dce6;background:#fff}
-.record-subsection>h3{margin:0;padding:11px 15px;border-bottom:1px solid #d2dce6;border-left:5px solid #527ca8;background:#eaf1f8;color:var(--blue);font-size:16px;line-height:1.35}
+.record-subsection>:is(h3,h5){margin:0;padding:11px 15px;border-bottom:1px solid #d2dce6;border-left:5px solid #527ca8;background:#eaf1f8;color:var(--blue);font-size:16px;line-height:1.35}
 .record-subsection>.record-table-wrap,.record-subsection>.record-entity,.record-subsection>.record-empty,.record-subsection>.record-description{margin:16px}
 .record-subsection>.record-entity+.record-entity{margin-top:18px}
-.record-subsection.scope-in>h3{border-left-color:#307d8b;background:#e8f3f5}
-.record-subsection.scope-out>h3{border-left-color:#9a731d;background:#fff6e5}
-.record-subsection.scope-risks>h3{border-left-color:#a46d2e;background:#fff5ea}
+.record-subsection.scope-in>:is(h3,h5){border-left-color:#307d8b;background:#e8f3f5}
+.record-subsection.scope-out>:is(h3,h5){border-left-color:#9a731d;background:#fff6e5}
+.record-subsection.scope-risks>:is(h3,h5){border-left-color:#a46d2e;background:#fff5ea}
 .record-subsection.scope-blockers{border-color:#dfc4c4}
-.record-subsection.scope-blockers>h3{border-left-color:#a52828;border-bottom-color:#dfc4c4;background:#fff0f0;color:#812323}
+.record-subsection.scope-blockers>:is(h3,h5){border-left-color:#a52828;border-bottom-color:#dfc4c4;background:#fff0f0;color:#812323}
 .record-table-wrap{border-radius:3px;max-width:100%}
 .record-table{width:100%;min-width:680px;border-collapse:collapse;font-size:14px;line-height:1.45}
 .record-table th,.record-table td{padding:10px 12px;border-bottom:1px solid #dce3eb;border-right:1px solid #edf1f5;text-align:left;vertical-align:top;overflow-wrap:anywhere}
@@ -178,10 +195,11 @@ main{padding:0 0 72px}
 .record-meetings th:nth-child(3),.record-meetings td:nth-child(3){width:20%}
 .record-meetings th:nth-child(4),.record-meetings td:nth-child(4){width:23%}
 .record-meetings th:nth-child(5),.record-meetings td:nth-child(5){width:22%}
-.record-choice-table{min-width:940px}
+.record-choice-table{min-width:760px}
 .record-choice-table td:last-child{min-width:260px}
 .record-choice-table .record-category{color:#52677f;font-size:12px;font-weight:650;min-width:110px}
 .record-success{min-width:920px}
+.record-blockers{min-width:1350px}
 .record-exclusions{min-width:830px}
 .record-status{text-align:center!important;font-weight:700;white-space:nowrap;color:var(--blue)}
 .record-blank{color:#778494;font-style:italic;font-weight:400}
