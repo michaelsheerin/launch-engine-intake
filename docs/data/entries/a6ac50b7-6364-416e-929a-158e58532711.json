@@ -2,21 +2,15 @@
   "schemaVersion": 1,
   "id": "a6ac50b7-6364-416e-929a-158e58532711",
   "createdAt": "2026-10-08T03:08:32.667Z",
-  "updatedAt": "2026-10-08T14:40:09.000Z",
+  "updatedAt": "2026-10-16T18:26:03.000Z",
   "createdBy": "michaelsheerin",
   "updatedBy": "michaelsheerin",
   "profile": {
     "customerOrganization": "Cedar Vale Manufacturing (fictional)",
     "workloadName": "Oracle E-Business Suite production migration",
     "engagementType": "Migration",
-    "targetRegions": "US East (Ashburn), US Midwest (Chicago)",
-    "customerLocation": "Columbus, Ohio, United States",
-    "industry": "Industrial manufacturing",
     "opportunityId": "DEMO-OPP-27041",
-    "orderNumber": "DEMO-ORD-1428",
-    "bookingDate": "2026-09-28",
     "accountExecutive": "Avery Bennett (fictional)",
-    "oracleDeliveryLead": "Jordan Lee, Pursuits handoff (fictional)",
     "solutionArchitect": "Morgan Chen (fictional)",
     "implementationPartner": "North Bridge Systems, Priya Shah (fictional)",
     "targetGoLive": "2027-03-20",
@@ -24,18 +18,18 @@
   },
   "summaryMarkdown": "## Proposed launch\nMove Cedar Vale's Oracle E-Business Suite 12.2 production estate and supporting integrations from its Ohio data center to OCI. The customer and North Bridge Systems own implementation. Launch Engine will review architecture decisions, coordinate Oracle service specialists, and track open platform blockers.\n\nThe initial migration wave covers nonproduction validation before a customer-led production cutover.",
   "stakeholders": [
-    {"name":"Elena Ortiz (fictional)","role":"Customer application owner","contact":"elena.ortiz@example.com","influence":"Approves EBS functional testing and acceptance","notes":"Primary business decision maker for the migration wave."},
-    {"name":"Priya Shah (fictional)","role":"Implementation partner lead","contact":"priya.shah@example.com","influence":"Owns implementation plan and cutover execution","notes":"Coordinates infrastructure, database, and application workstreams."},
-    {"name":"Noah Brooks (fictional)","role":"Customer cloud platform owner","contact":"noah.brooks@example.com","influence":"Approves tenancy, networking, and operational handoff","notes":"Customer team has operated one small OCI analytics workload."}
+    {"name":"Elena Ortiz (fictional)","role":"Customer application owner","influence":"Approves EBS functional testing and acceptance","notes":"Primary business decision maker for the migration wave."},
+    {"name":"Priya Shah (fictional)","role":"Implementation partner lead","influence":"Owns implementation plan and cutover execution","notes":"Coordinates infrastructure, database, and application workstreams."},
+    {"name":"Noah Brooks (fictional)","role":"Customer cloud platform owner","influence":"Approves tenancy, networking, and operational handoff","notes":"Customer team has operated one small OCI analytics workload."}
   ],
   "meetings": [
-    {"day":"Tuesday","time":"10:00 AM","timeZone":"Eastern (ET)","cadence":"Weekly","topic":"Architecture and blocker review","audience":"Application owner, platform owner, partner lead","notes":"30-minute review each Tuesday until the pilot exits."},
-    {"day":"Tuesday","time":"2:00 PM","timeZone":"Eastern (ET)","cadence":"Biweekly","topic":"Production readiness review","audience":"Application owner, security lead, partner lead","notes":"Customer program manager owns the agenda and decisions."}
+    {"day":"Tuesday","time":"10:00 AM","cadence":"Weekly","topic":"Architecture and blocker review","audience":"Application owner, platform owner, partner lead","notes":"30-minute review each Tuesday until the pilot exits."},
+    {"day":"Tuesday","time":"2:00 PM","cadence":"Biweekly","topic":"Production readiness review","audience":"Application owner, security lead, partner lead","notes":"Customer program manager owns the agenda and decisions."}
   ],
   "reasons": {
-    "0":{"selected":true,"executiveMandate":false,"note":"Refresh the EBS hosting platform without changing core business processes."},
-    "2":{"selected":true,"executiveMandate":true,"note":"**Executive deadline:** Ohio data center lease ends in June 2027."},
-    "3":{"selected":true,"executiveMandate":false,"note":"Hardware support renewal is due in July 2027."}
+    "0":{"selected":true,"note":"Refresh the EBS hosting platform without changing core business processes."},
+    "2":{"selected":true,"note":"**Executive deadline:** Ohio data center lease ends in June 2027."},
+    "3":{"selected":true,"note":"Hardware support renewal is due in July 2027."}
   },
   "reasonOtherMarkdown": "",
   "goals": {
@@ -85,7 +79,7 @@
   ],
   "concerns": {
     "0":{"selected":true,"note":"Custom EBS extensions need dependency testing."},
-    "5":{"selected":true,"executiveMandate":true,"note":"Identity federation and privileged access require review."},
+    "5":{"selected":true,"note":"Identity federation and privileged access require review."},
     "6":{"selected":true,"note":"Cutover plan must protect open orders and support rollback."}
   },
   "concernOtherMarkdown":"",
@@ -94,9 +88,9 @@
     {"name":"Ashburn compute capacity review","category":"Capacity","impact":"Soft requirement","owner":"Jordan Lee (fictional)","eta":"2026-12-04","ticket":"DEMO-CAP-441","descriptionMarkdown":"The current estimate calls for a peak of 96 OCPUs during parallel validation. Region capacity is not yet reserved.","nextStepMarkdown":"Confirm shape mix and need-by dates, then submit a capacity review request."}
   ],
   "successMeasures": [
-    {"name":"Nonproduction month-end validation","shortDescription":"EBS completes a representative month-end cycle with no unresolved critical defects.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Open critical defects after the month-end test","targetGoal":"0 critical defects"},
-    {"name":"Production cutover window","shortDescription":"The customer-led cutover finishes within the approved outage window.","impactsGoNoGo":"Yes","isMeasurableMetric":"Yes","metricDescription":"Elapsed production outage during cutover","targetGoal":"8 hours or less"},
-    {"name":"Business process acceptance","shortDescription":"Business owners validate order creation, receiving, and finance posting after cutover.","impactsGoNoGo":"Yes","isMeasurableMetric":"No"}
+    {"name":"Nonproduction month-end validation","shortDescription":"EBS completes a representative month-end cycle with no unresolved critical defects.","hardBlocker":true,"targetGoal":"0 critical defects"},
+    {"name":"Production cutover window","shortDescription":"The customer-led cutover finishes within the approved outage window.","hardBlocker":true,"targetGoal":"8 hours or less"},
+    {"name":"Business process acceptance","shortDescription":"Business owners validate order creation, receiving, and finance posting after cutover.","hardBlocker":false}
   ],
   "assessment": {
     "applications":{"currentState":"EBS 12.2 application tier on 14 Linux VMs.","targetState":"OCI Compute application tier across two availability domains where available.","requirements":"Review custom extensions, interface endpoints, and supported software versions.","gaps":"Complete partner inventory of custom concurrent programs.","customerOwner":"Elena Ortiz (fictional)","architectureDiagram":"https://example.com/demo/architecture/applications"},

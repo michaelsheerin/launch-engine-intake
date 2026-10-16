@@ -72,12 +72,30 @@ main{padding:0 0 72px}
 .subsection[open]>summary::after{content:'−'}
 .subsection[open]>summary{border-bottom:1px solid var(--line)}
 .subsection-body{padding:16px}
+.editable-table-wrap{margin:0 0 12px}
+.editable-table{width:100%;min-width:860px;border-collapse:collapse;table-layout:fixed}
+.editable-table th,.editable-table td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+.editable-table th{background:#edf3f8;color:var(--blue);font-size:11px;font-weight:750;letter-spacing:.05em;text-transform:uppercase}
+.editable-table tbody tr:last-child td{border-bottom:0}
+.editable-table tbody tr:nth-child(even){background:#fbfcfe}
+.editable-table .field>label{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.editable-table .field input,.editable-table .field select,.editable-table .field textarea{font-size:13px;min-height:36px;padding:7px 8px}
+.editable-table .field textarea.compact-autogrow{height:36px;min-height:36px}
+.editable-table .other-detail{margin-top:6px}
+.editable-table .other-detail label{font-size:11px;color:var(--muted)}
+.editable-table .editable-row-action{width:95px;text-align:right}
+.editable-table .editable-row-action .button{min-height:36px}
+.editable-table .schedule-controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.editable-table-wrap:has([data-path^="meetings."]) .editable-table{min-width:940px}
+.editable-table .success-check{text-align:center;vertical-align:middle}
+.success-check input{width:20px;height:20px;accent-color:var(--blue);cursor:pointer}
+.field textarea.short-textarea{height:64px;min-height:64px}
 .choice-table{border:1px solid var(--line);border-radius:4px;overflow:hidden;margin:10px 0 24px}
-.choice-table-head,.choice-table-row{display:grid;grid-template-columns:minmax(200px,1fr) 126px 126px minmax(360px,2fr);gap:14px;align-items:center;padding:11px 14px}
+.choice-table-head,.choice-table-row{display:grid;grid-template-columns:minmax(200px,1fr) 126px minmax(360px,2fr);gap:14px;align-items:center;padding:11px 14px}
 .choice-table-head{background:#edf3f8;color:var(--blue);font-size:11px;font-weight:750;letter-spacing:.05em;text-transform:uppercase}
 .choice-table-row{border-top:1px solid var(--line);background:#fff}
 .choice-table-row:nth-child(odd){background:#fbfcfe}
-.goals-table .choice-table-head{grid-template-columns:44px minmax(200px,1fr) 126px 126px minmax(360px,2fr);padding-left:0}
+.goals-table .choice-table-head{grid-template-columns:44px minmax(200px,1fr) 126px minmax(360px,2fr);padding-left:0}
 .goal-group{display:grid;grid-template-columns:44px minmax(0,1fr);border-top:1px solid #aebfd0}
 .goal-group:last-child{border-bottom:1px solid #aebfd0}
 .goal-group-label{display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;background:#eaf1f8;border-right:1px solid var(--line);color:var(--blue);font-size:12px;font-weight:700;letter-spacing:.02em;padding:12px 0}

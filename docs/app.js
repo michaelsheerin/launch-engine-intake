@@ -51,7 +51,6 @@ const SERVICE_CATEGORIES = ['Compute', 'Block Storage', 'Object Storage', 'Datab
 const DISPOSITIONS = ['Rehost', 'Replatform', 'Refactor', 'Retain', 'Retire', 'Repurchase'];
 const CALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const CALL_TIMES = Array.from({length:29},(_,i)=>{const hour=6+Math.floor(i/2);const minute=i%2?'30':'00';return `${hour>12?hour-12:hour}:${minute} ${hour<12?'AM':'PM'}`;});
-const CALL_TIME_ZONES = ['UTC','Eastern (ET)','Central (CT)','Mountain (MT)','Pacific (PT)','Alaska (AKT)','Hawaii (HT)','Other'];
 
 let draft = null;
 let editingId = null;
@@ -60,8 +59,8 @@ let auth = sessionStorage.getItem('launchSession') || '';
 function blankEntry() {
   return {
     schemaVersion: 1,
-    profile: {}, summaryMarkdown: '', stakeholders: [], meetings: [],
-    reasons: {}, reasonOtherMarkdown: '', goals: {}, goalOtherMarkdown: '', successMeasures: [], workloads: [], exclusions: [],
+    profile: {}, summaryMarkdown: '', stakeholders: [{},{}], meetings: [{},{}],
+    reasons: {}, reasonOtherMarkdown: '', goals: {}, goalOtherMarkdown: '', successMeasures: [{},{}], workloads: [], exclusions: [],
     concerns: {}, concernOtherMarkdown: '', blockers: [],
     assessment: {}, readiness: {}, artifacts: {}
   };
@@ -80,7 +79,7 @@ function setPath(object, path, value) {
   });
   current[keys.at(-1)] = value;
 }
-function field(path, label, {type='text', options=[], full=false, hint='', placeholder='', selectPrompt='Select, if known', revealOnYes=false, autoGrow=false, compact=false, autoGrowOther=false}={}) {
+function field(path, label, {type='text', options=[], full=false, hint='', placeholder='', selectPrompt='Select, if known', revealOnYes=false, autoGrow=false, compact=false, short=false, autoGrowOther=false}={}) {
   const id = `f-${path.replace(/[^a-z0-9]/gi, '-')}`;
   const value = getPath(draft, path) ?? '';
   let control = '';
@@ -90,7 +89,7 @@ function field(path, label, {type='text', options=[], full=false, hint='', place
     control = `<select id="${id}" data-path="${esc(path)}" ${options.includes('Other') ? `data-other-path="${esc(otherPath)}"` : ''} ${revealOnYes ? 'data-reveal-on-yes="true"' : ''}><option value="">${esc(selectPrompt)}</option>${options.map(option => `<option value="${esc(option)}" ${value === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
     if (options.includes('Other')) control += `<div class="other-detail" data-other-for="${esc(path)}" ${value === 'Other' ? '' : 'hidden'}><label for="${id}-other">${esc(label)} Details</label>${autoGrowOther ? `<textarea id="${id}-other" class="auto-grow compact-autogrow" data-min-height="40" rows="1" data-path="${esc(otherPath)}" placeholder="Add details">${esc(otherValue)}</textarea>` : `<input id="${id}-other" data-path="${esc(otherPath)}" type="text" value="${esc(otherValue)}" placeholder="Add details">`}</div>`;
   } else if (type === 'textarea') {
-    control = `<textarea id="${id}" class="${autoGrow ? `auto-grow ${compact ? 'compact-autogrow' : ''}` : ''}" ${autoGrow ? `data-min-height="${compact ? 40 : 92}" rows="${compact ? 1 : 3}"` : ''} data-path="${esc(path)}" placeholder="${esc(placeholder)}">${esc(value)}</textarea>`;
+    control = `<textarea id="${id}" class="${autoGrow ? `auto-grow ${compact ? 'compact-autogrow' : ''}` : ''} ${short ? 'short-textarea' : ''}" ${autoGrow ? `data-min-height="${compact ? 40 : 92}" rows="${compact ? 1 : 3}"` : `rows="${short ? 2 : 3}"`} data-path="${esc(path)}" placeholder="${esc(placeholder)}">${esc(value)}</textarea>`;
   } else {
     control = `<input id="${id}" data-path="${esc(path)}" type="${esc(type)}" value="${esc(value)}" placeholder="${esc(placeholder)}">`;
   }
@@ -107,6 +106,12 @@ function repeatCards(path, title, fields, addLabel, defaultItem={}, third=false)
   const values = getPath(draft, path) || [];
   return `<div class="repeat-list">${values.map((_, i) => `<div class="repeat-card"><div class="repeat-head"><h3>${esc(title)} ${i + 1}</h3><button type="button" class="button button-quiet button-small" data-remove="${esc(path)}" data-index="${i}" aria-label="Remove ${esc(title)} ${i + 1}">Remove</button></div>${grid(fields(`${path}.${i}`, i),third)}</div>`).join('')}</div><button type="button" class="button button-outline button-small add-row" data-add="${esc(path)}" data-template="${esc(JSON.stringify(defaultItem))}">+ ${esc(addLabel)}</button>`;
 }
+function editableTable(path, headers, row, addLabel) {
+  const values=getPath(draft,path)||[];
+  const rowLabel=addLabel.replace(/^Add /,'');
+  const rows=values.map((_,i)=>`<tr>${row(`${path}.${i}`,i)}<td class="editable-row-action"><button type="button" class="button button-quiet button-small" data-remove="${esc(path)}" data-index="${i}" aria-label="Remove ${esc(rowLabel)} ${i+1}">Remove</button></td></tr>`).join('');
+  return `<div class="table-wrap editable-table-wrap"><table class="editable-table"><thead><tr>${headers.map(label=>`<th scope="col">${esc(label)}</th>`).join('')}<th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody>${rows||`<tr><td colspan="${headers.length+1}" class="record-empty">No rows. Add one below.</td></tr>`}</tbody></table></div><button type="button" class="button button-outline button-small add-row" data-add="${esc(path)}" data-template="{}">+ ${esc(addLabel)}</button>`;
+}
 function titleCaseLabel(value) {
   const smallWords = new Set(['a','an','and','for','in','of','on','or','the','to','with']);
   return String(value).split(' ').map((word, index) => index && smallWords.has(word.toLowerCase()) ? word.toLowerCase() : word.replace(/^[a-z]/, ch => ch.toUpperCase())).join(' ');
@@ -116,13 +121,12 @@ function choiceRowItems(path, values, offset=0) {
     const key = String(index + offset);
     const prefix = `${path}.${key}`;
     const selected = !!getPath(draft, `${prefix}.selected`);
-    const executive = !!getPath(draft, `${prefix}.executiveMandate`);
     const note = getPath(draft, `${prefix}.note`) || '';
-    return `<div class="choice-table-row"><span class="choice-label">${esc(titleCaseLabel(label))}</span><label class="choice-check"><input type="checkbox" data-path="${prefix}.selected" aria-label="Applies to this migration: ${esc(label)}" ${selected ? 'checked' : ''}><span class="choice-mobile-label">Applies to This Migration</span></label><label class="choice-check"><input type="checkbox" data-path="${prefix}.executiveMandate" aria-label="Executive mandate: ${esc(label)}" ${executive ? 'checked' : ''}><span class="choice-mobile-label">Executive Mandate?</span></label><textarea class="choice-note auto-grow" rows="1" data-path="${prefix}.note" aria-label="Notes and More Details for ${esc(label)}" placeholder="Add details if useful">${esc(note)}</textarea></div>`;
+    return `<div class="choice-table-row"><span class="choice-label">${esc(titleCaseLabel(label))}</span><label class="choice-check"><input type="checkbox" data-path="${prefix}.selected" aria-label="Applies to this migration: ${esc(label)}" ${selected ? 'checked' : ''}><span class="choice-mobile-label">Applies to This Migration</span></label><textarea class="choice-note auto-grow" rows="1" data-path="${prefix}.note" aria-label="Notes and More Details for ${esc(label)}" placeholder="Add details if useful">${esc(note)}</textarea></div>`;
   }).join('');
 }
-function choiceRows(path, values, offset=0) {
-  return `<div class="choice-table"><div class="choice-table-head"><span>Item</span><span>Applies to This Migration</span><span>Executive Mandate?</span><span>Notes and More Details</span></div>${choiceRowItems(path,values,offset)}</div>`;
+function choiceRows(path, values, label='Item', offset=0) {
+  return `<div class="choice-table"><div class="choice-table-head"><span>${esc(label)}</span><span>Applies to This Migration</span><span>Notes and More Details</span></div>${choiceRowItems(path,values,offset)}</div>`;
 }
 function goalOptions() {
   const out = [];
@@ -136,7 +140,7 @@ function allGoalRows() {
     cursor += values.length;
     return `<div class="goal-group"><div class="goal-group-label"><span>${esc(titleCaseLabel(group))}</span></div><div class="goal-group-rows">${rows}</div></div>`;
   }).join('');
-  return `<div class="choice-table goals-table"><div class="choice-table-head"><span aria-hidden="true"></span><span>Item</span><span>Applies to This Migration</span><span>Executive Mandate?</span><span>Notes and More Details</span></div>${groups}</div>`;
+  return `<div class="choice-table goals-table"><div class="choice-table-head"><span aria-hidden="true"></span><span>Target Goals</span><span>Applies to This Migration</span><span>Notes and More Details</span></div>${groups}</div>`;
 }
 function checklist(path, values) {
   const selected = getPath(draft, path) || [];
@@ -146,52 +150,45 @@ function profileSection() {
   return section('profile', '1. Workload Profile', grid([
     field('profile.customerOrganization','Account Name'), field('profile.workloadName','Workload Name'),
     field('profile.engagementType','Engagement Type',{type:'select',options:['Net-new tenancy','Modernization','Migration','Disaster recovery','Other']}),
-    field('profile.targetRegions','Target OCI Regions',{hint:'Separate multiple regions with commas.'}),
-    field('profile.customerLocation','Customer Location'), field('profile.industry','Industry'),
-    field('profile.opportunityId','Opp ID'), field('profile.orderNumber','Order #'),
-    field('profile.bookingDate','Booking Date',{type:'date'}), field('profile.accountExecutive','Account Exec'),
-    field('profile.oracleDeliveryLead','Oracle Delivery Lead'), field('profile.solutionArchitect','Solution Architect'),
+    field('profile.opportunityId','Opp ID'), field('profile.accountExecutive','Account Exec'),
+    field('profile.solutionArchitect','Solution Architect'),
     field('profile.implementationPartner','Implementation Partner'),
     field('profile.targetGoLive','Target Go-Live',{type:'date'}),
-    field('profile.plannedStart','Planned Workload Start',{type:'date'}),
+    field('profile.plannedStart','Planned Migration Start',{type:'date'}),
     field('summaryMarkdown','Describe the workload or migration in your own words',{type:'textarea',full:true,hint:'Markdown supported in the published entry.'})
-  ],true), 'Identify the account and proposed workload so Launch can route the handoff and align timing. Include the opportunity, order, and leads already involved. A brief workload summary is enough; link detailed pursuit work in Section 7.', true);
+  ],true), 'Identify the account and proposed workload so Launch can route the handoff and align timing. Include the opportunity and leads already involved. A brief workload summary is enough; link detailed pursuit work in Section 7.', true);
 }
 function peopleSection() {
-  const people = repeatCards('stakeholders','Contact', prefix => [
-    field(`${prefix}.name`,'Name'), field(`${prefix}.role`,'Role'),
-    field(`${prefix}.contact`,'Email or Contact Info'), field(`${prefix}.influence`,'Influence on Workload'),
-    field(`${prefix}.notes`,'Additional Notes',{type:'textarea',full:true})
-  ],'Add customer contact');
-  const meetings = repeatCards('meetings','Cadence Call',prefix => [
-    field(`${prefix}.day`,'Day',{type:'select',options:CALL_DAYS,selectPrompt:'Choose day'}),
-    field(`${prefix}.time`,'Time',{type:'select',options:CALL_TIMES,selectPrompt:'Choose time'}),
-    field(`${prefix}.timeZone`,'Time Zone',{type:'select',options:CALL_TIME_ZONES,selectPrompt:'Choose time zone'}),
-    field(`${prefix}.cadence`,'Cadence',{type:'select',options:['Weekly','Biweekly','Monthly','One-Time','Other'],selectPrompt:'Choose cadence'}),
-    field(`${prefix}.topic`,'Topic'), field(`${prefix}.audience`,'Customer Audience'),
-    field(`${prefix}.notes`,'Additional Notes',{type:'textarea',full:true})
-  ],'Add Cadence Call',{},true);
+  const people=editableTable('stakeholders',['Name','Role','Influence on Workload','Note'],prefix=>`
+    <td>${field(`${prefix}.name`,'Name')}</td>
+    <td>${field(`${prefix}.role`,'Role')}</td>
+    <td>${field(`${prefix}.influence`,'Influence on Workload',{type:'textarea',autoGrow:true,compact:true})}</td>
+    <td>${field(`${prefix}.notes`,'Note',{type:'textarea',autoGrow:true,compact:true})}</td>`,'Add Contact Row');
+  const meetings=editableTable('meetings',['Topic','Day and Time','Cadence','Customer Audience','Note'],prefix=>`
+    <td>${field(`${prefix}.topic`,'Topic')}</td>
+    <td><div class="schedule-controls">${field(`${prefix}.day`,'Day',{type:'select',options:CALL_DAYS,selectPrompt:'Day'})}${field(`${prefix}.time`,'Time',{type:'select',options:CALL_TIMES,selectPrompt:'Time'})}</div></td>
+    <td>${field(`${prefix}.cadence`,'Cadence',{type:'select',options:['Weekly','Biweekly','Monthly','One-Time','Other'],selectPrompt:'Cadence'})}</td>
+    <td>${field(`${prefix}.audience`,'Customer Audience',{type:'textarea',autoGrow:true,compact:true})}</td>
+    <td>${field(`${prefix}.notes`,'Note',{type:'textarea',autoGrow:true,compact:true})}</td>`,'Add Cadence Call Row');
   return section('people','2. People and Meetings',subsection('people-contacts','Key Customer Contacts',people)+subsection('people-meetings','Customer Cadence Calls',meetings),'List customer stakeholders who make decisions or own delivery, plus the calls already scheduled or planned. Capture the cadence and audience so Launch joins the right discussions. The customer or its implementation partner owns delivery.');
 }
 function outcomesSection() {
-  const reasons = `<details class="subsection" data-subsection="reasons" open><summary>Reasons to Migrate</summary><div class="subsection-body"><p class="subsection-description">Select the business or timing drivers behind this move. Mark executive mandates and add only the context Launch needs for the handoff.</p>${choiceRows('reasons',REASONS.slice(0,-1))}${grid([
-    field('reasonOtherMarkdown','Other Reason to Migrate',{type:'textarea',full:true,hint:'Markdown supported in the published entry.'})
+  const reasons = `<details class="subsection" data-subsection="reasons" open><summary>Reasons to Migrate</summary><div class="subsection-body"><p class="subsection-description">Select the business or timing drivers behind this move. Add only the context Launch needs for the handoff.</p>${choiceRows('reasons',REASONS.slice(0,-1),'Reason to Migrate')}${grid([
+    field('reasonOtherMarkdown','Other Reason to Migrate',{type:'textarea',full:true,short:true,hint:'Markdown supported in the published entry.'})
   ])}</div></details>`;
   const goals = `<details class="subsection" data-subsection="goals" open><summary>Goals and Improvements</summary><div class="subsection-body"><p class="subsection-description">Select the outcomes the customer expects from OCI. Note details already agreed, especially where they affect launch priorities.</p>${allGoalRows()}${grid([
-    field('goalOtherMarkdown','Other Goal or Improvement',{type:'textarea',full:true})
+    field('goalOtherMarkdown','Other Goal or Improvement',{type:'textarea',full:true,short:true})
   ])}</div></details>`;
-  const success = repeatCards('successMeasures','Success Measure',prefix => [
-    field(`${prefix}.name`,'Success Measure Name',{full:true}),
-    field(`${prefix}.shortDescription`,'Short Description',{type:'textarea',full:true}),
-    field(`${prefix}.impactsGoNoGo`,'Will This Impact the Go/No-Go Decision?',{type:'select',options:['Yes','No'],selectPrompt:'Choose yes or no'}),
-    field(`${prefix}.isMeasurableMetric`,'Is This a Measurable Metric?',{type:'select',options:['Yes','No'],selectPrompt:'Choose yes or no',revealOnYes:true}),
-    `<div class="metric-fields full" data-reveal-for="${esc(`${prefix}.isMeasurableMetric`)}" ${getPath(draft,`${prefix}.isMeasurableMetric`)==='Yes'?'':'hidden'}>${grid([
-      field(`${prefix}.metricDescription`,'Metric Description',{type:'textarea',full:true}),
-      field(`${prefix}.targetGoal`,'Target Goal',{type:'textarea',full:true})
-    ])}</div>`
-  ],'Add Success Measure');
-  const successSubsection = `<details class="subsection" data-subsection="success" open><summary>Success Measures</summary><div class="subsection-body"><p class="subsection-description">Add the criteria the customer will use to judge launch readiness. For measurable targets, describe the metric and target goal.</p>${success}</div></details>`;
-  return section('outcomes','3. Business Case and Success',`${reasons}${goals}${successSubsection}`,'Record why the customer chose OCI and how they will judge progress. Select active drivers and goals, then capture any executive mandate or success measure already agreed with the customer.');
+  const success=editableTable('successMeasures',['Success Metric','Description','Hard Blocker?','If Measurable, What Is the Target?'],(prefix,i)=>{
+    const item=getPath(draft,prefix)||{};
+    const hardBlocker=item.hardBlocker===true||(item.hardBlocker==null&&item.impactsGoNoGo==='Yes');
+    return `<td>${field(`${prefix}.name`,'Success Metric')}</td>
+      <td>${field(`${prefix}.shortDescription`,'Description',{type:'textarea',autoGrow:true,compact:true})}</td>
+      <td class="success-check"><label class="choice-check"><input type="checkbox" data-path="${esc(`${prefix}.hardBlocker`)}" aria-label="Hard blocker for success metric ${i+1}" ${hardBlocker?'checked':''}></label></td>
+      <td>${field(`${prefix}.targetGoal`,'Target',{type:'textarea',autoGrow:true,compact:true})}</td>`;
+  },'Add Success Metric Row');
+  const successSubsection = `<details class="subsection" data-subsection="success" open><summary>Success Measures</summary><div class="subsection-body"><p class="subsection-description">List criteria the customer will use to judge launch readiness. Mark any hard blocker and provide a measurable target when one exists.</p>${success}</div></details>`;
+  return section('outcomes','3. Business Case and Success',`${reasons}${goals}${successSubsection}`,'Record why the customer chose OCI and how they will judge progress. Select active drivers and goals, then capture success measures already agreed with the customer.');
 }
 function workloadSection() {
   const workloads = repeatCards('workloads','Workload',prefix => [
@@ -342,37 +339,35 @@ function recordPanel(title, body) {
 function matrix(rows) {
   return `<div class="table-wrap record-table-wrap"><table class="record-table record-matrix"><tbody>${rows.map(([label,value,markdown=false,link=false])=>`<tr><th scope="row">${esc(label)}</th><td>${link ? linkText(value) || recordValue('') : recordValue(value,markdown)}</td></tr>`).join('')}</tbody></table></div>`;
 }
-function choiceTable(object, choices, otherMarkdown='', withCategory=false) {
+function choiceTable(object, choices, otherMarkdown='', withCategory=false, itemLabel='Label') {
   const rows = choices.map(({label,category,index})=>{
     const item=object?.[index];
-    if (!item?.selected && !item?.note && !item?.executiveMandate) return '';
-    const cells=[withCategory ? `<td class="record-category">${esc(category)}</td>` : '',`<th scope="row">${esc(titleCaseLabel(label))}</th>`,`<td class="record-status">${item.selected ? 'Yes' : 'No'}</td>`,`<td class="record-status">${item.executiveMandate ? 'Yes' : 'No'}</td>`,`<td>${recordValue(item.note,true)}</td>`];
+    if (!item?.selected && !item?.note) return '';
+    const cells=[withCategory ? `<td class="record-category">${esc(category)}</td>` : '',`<th scope="row">${esc(titleCaseLabel(label))}</th>`,`<td class="record-status">${item.selected ? 'Yes' : 'No'}</td>`,`<td>${recordValue(item.note,true)}</td>`];
     return `<tr>${cells.join('')}</tr>`;
   }).filter(Boolean);
-  if (otherMarkdown) rows.push(`<tr>${withCategory ? '<td class="record-category">Other</td>' : ''}<th scope="row">Other</th><td class="record-status">Yes</td><td class="record-status">No</td><td>${recordValue(otherMarkdown,true)}</td></tr>`);
-  return recordTable([...(withCategory?['Category']:[]),'Label','Applies to This Migration?','Executive Mandate?','Notes and More Details'],rows,'record-choice-table');
+  if (otherMarkdown) rows.push(`<tr>${withCategory ? '<td class="record-category">Other</td>' : ''}<th scope="row">Other</th><td class="record-status">Yes</td><td>${recordValue(otherMarkdown,true)}</td></tr>`);
+  return recordTable([...(withCategory?['Category']:[]),itemLabel,'Applies to This Migration?','Notes and More Details'],rows,'record-choice-table');
 }
 function recordBody(record) {
   const p=record.profile || {};
   const profileFields=[
     [['Account Name',p.customerOrganization],['Workload Name',p.workloadName],['Engagement Type',p.engagementType==='Other'&&p.engagementTypeOther?`Other: ${p.engagementTypeOther}`:p.engagementType]],
-    [['Target OCI Regions',p.targetRegions],['Customer Location',p.customerLocation],['Industry',p.industry]],
-    [['Opp ID',p.opportunityId],['Order #',p.orderNumber],['Booking Date',p.bookingDate]],
-    [['Account Exec',p.accountExecutive],['Oracle Delivery Lead',p.oracleDeliveryLead],['Solution Architect',p.solutionArchitect]],
-    [['Implementation Partner',p.implementationPartner],['Target Go-Live',p.targetGoLive],['Planned Workload Start',p.plannedStart]]
+    [['Opp ID',p.opportunityId],['Account Exec',p.accountExecutive],['Solution Architect',p.solutionArchitect]],
+    [['Implementation Partner',p.implementationPartner],['Target Go-Live',p.targetGoLive],['Planned Migration Start',p.plannedStart]]
   ];
   const profileRows=profileFields.map(group=>`<tr>${group.map(([label,value])=>`<td><span class="record-field-label">${esc(label)}</span><div>${recordValue(value)}</div></td>`).join('')}</tr>`);
   const profile=`${recordTable([],profileRows,'record-profile-table')}<div class="record-description"><h3>Description</h3>${recordValue(record.summaryMarkdown,true)}</div>`;
 
-  const contacts=(record.stakeholders||[]).map(v=>`<tr><th scope="row">${recordValue(v.name)}</th><td>${recordValue(v.role)}</td><td>${recordValue(v.contact)}</td><td>${recordValue(v.influence)}</td><td>${recordValue(v.notes,true)}</td></tr>`);
-  const meetings=(record.meetings||[]).map(v=>{const zone=v.timeZone==='Other'&&v.timeZoneOther?`Other: ${v.timeZoneOther}`:v.timeZone;const schedule=[v.day||v.dateTime,v.time,zone].filter(Boolean).join(' · ');return `<tr><td>${recordValue(schedule)}</td><td>${recordValue(v.cadence==='Other'&&v.cadenceOther?`Other: ${v.cadenceOther}`:v.cadence)}</td><th scope="row">${recordValue(v.topic)}</th><td>${recordValue(v.audience)}</td><td>${recordValue(v.notes,true)}</td></tr>`;});
-  const people=recordSubsection('Key Customer Contacts',recordTable(['Name','Role','Email or Contact Info','Influence on Workload','Additional Notes'],contacts,'record-contacts'))+recordSubsection('Customer Cadence Calls',recordTable(['Day, Time, and Time Zone','Cadence','Topic','Customer Audience','Additional Notes'],meetings,'record-meetings'));
+  const contacts=(record.stakeholders||[]).filter(v=>v&&['name','role','influence','notes'].some(key=>String(v[key]??'').trim())).map(v=>`<tr><th scope="row">${recordValue(v.name)}</th><td>${recordValue(v.role)}</td><td>${recordValue(v.influence)}</td><td>${recordValue(v.notes,true)}</td></tr>`);
+  const meetings=(record.meetings||[]).filter(v=>v&&['topic','day','dateTime','time','cadence','audience','notes'].some(key=>String(v[key]??'').trim())).map(v=>{const schedule=[v.day||v.dateTime,v.time].filter(Boolean).join(' · ');return `<tr><th scope="row">${recordValue(v.topic)}</th><td>${recordValue(schedule)}</td><td>${recordValue(v.cadence==='Other'&&v.cadenceOther?`Other: ${v.cadenceOther}`:v.cadence)}</td><td>${recordValue(v.audience)}</td><td>${recordValue(v.notes,true)}</td></tr>`;});
+  const people=recordSubsection('Key Customer Contacts',recordTable(['Name','Role','Influence on Workload','Note'],contacts,'record-contacts'))+recordSubsection('Customer Cadence Calls',recordTable(['Topic','Day and Time','Cadence','Customer Audience','Note'],meetings,'record-meetings'));
 
   const reasonChoices=REASONS.slice(0,-1).map((label,index)=>({label,index}));
   const goalChoices=Object.entries(GOALS).flatMap(([category,labels])=>labels.map(label=>({category,label}))).map((item,index)=>({...item,index}));
   const concernChoices=CONCERNS.slice(0,-1).map((label,index)=>({label,index}));
-  const successRows=(record.successMeasures||[]).map((v,i)=>`<tr><th scope="row">${recordValue(v.name||`Success Measure ${i+1}`)}</th><td>${recordValue(v.shortDescription,true)}</td><td class="record-status">${recordValue(v.impactsGoNoGo)}</td><td class="record-status">${recordValue(v.isMeasurableMetric)}</td><td>${v.isMeasurableMetric==='Yes'?recordValue(v.metricDescription,true):'<span class="record-blank">Not applicable</span>'}</td><td>${v.isMeasurableMetric==='Yes'?recordValue(v.targetGoal,true):'<span class="record-blank">Not applicable</span>'}</td></tr>`);
-  const outcomes=recordSubsection('Reasons to Migrate',choiceTable(record.reasons,reasonChoices,record.reasonOtherMarkdown))+recordSubsection('Goals and Improvements',choiceTable(record.goals,goalChoices,record.goalOtherMarkdown,true))+recordSubsection('Success Measures',recordTable(['Success Measure Name','Short Description','Go/No-Go?','Measurable?','Metric Description','Target Goal'],successRows,'record-success')+(record.successMeasuresMarkdown?`<div class="record-description"><h4>Earlier Success Measures</h4>${recordValue(record.successMeasuresMarkdown,true)}</div>`:''));
+  const successRows=(record.successMeasures||[]).filter(v=>v&&['name','shortDescription','targetGoal'].some(key=>String(v[key]??'').trim())||(v?.hardBlocker===true)).map((v,i)=>`<tr><th scope="row">${recordValue(v.name||`Success Metric ${i+1}`)}</th><td>${recordValue(v.shortDescription,true)}</td><td class="record-status">${v.hardBlocker===true||(v.hardBlocker==null&&v.impactsGoNoGo==='Yes')?'Yes':'No'}</td><td>${recordValue(v.targetGoal,true)}</td></tr>`);
+  const outcomes=recordSubsection('Reasons to Migrate',choiceTable(record.reasons,reasonChoices,record.reasonOtherMarkdown,false,'Reason to Migrate'))+recordSubsection('Goals and Improvements',choiceTable(record.goals,goalChoices,record.goalOtherMarkdown,true,'Target Goals'))+recordSubsection('Success Measures',recordTable(['Success Metric','Description','Hard Blocker?','If Measurable, What Is the Target?'],successRows,'record-success')+(record.successMeasuresMarkdown?`<div class="record-description"><h4>Earlier Success Measures</h4>${recordValue(record.successMeasuresMarkdown,true)}</div>`:''));
 
   const workloads=(record.workloads||[]).map((v,i)=>`<article class="record-entity"><h4>${esc(v.name||`Workload ${i+1}`)}</h4>${matrix([['Migration Approach',v.disposition],['Line-of-Business',v.businessUnits,true],['Description',v.descriptionMarkdown,true],['Application Name and Vendor',v.applicationVendor,true],['Application Use',v.applicationUse==='Other'&&v.applicationUseOther?`Other: ${v.applicationUseOther}`:v.applicationUse],['Application Type',v.applicationType],['Current Tech Stack',v.sourceTechnologies,true],['Planned Migration Phase',v.migrationWave,true],['Estimated Start Date',v.eta],['Customer Owner',v.customerOwner,true],['Target OCI Service Categories',(v.serviceCategories||[]).join(', ')],['Other OCI Services Planned',v.otherOciServicesMarkdown,true],['Additional Considerations or Technical Dependencies',v.considerationsMarkdown,true]])}</article>`).join('')||'<p class="record-empty">No in-scope workloads entered.</p>';
   const exclusions=(record.exclusions||[]).map(v=>`<tr><th scope="row">${recordValue(v.item)}</th><td class="record-status">${recordValue(v.futurePhase)}</td><td>${v.futurePhase==='Yes'?recordValue(v.estimatedTargetDate):'<span class="record-blank">Not applicable</span>'}</td><td>${recordValue(v.description,true)}</td><td>${recordValue(v.assumptions,true)}</td></tr>`);
@@ -493,13 +488,26 @@ async function startForm(id=null) {
   } else draft=blankEntry();
   renderForm();
 }
+function compactRows(rows, keys) {
+  return (rows||[]).filter(row=>row&&keys.some(key=>String(row[key]??'').trim())).map(row=>Object.fromEntries(keys.filter(key=>String(row[key]??'').trim()).map(key=>[key,row[key]])));
+}
 async function submitForm() {
   if (!auth) {login();return;}
   const button=app.querySelector('button[type="submit"]');button.disabled=true;button.textContent='Saving…';
   try {
     const path=editingId?`/api/entries/${encodeURIComponent(editingId)}`:'/api/entries';
     const method=editingId?'PUT':'POST';
-    const {entry}=await api(path,{method,body:JSON.stringify(draft)});
+    const payload=JSON.parse(JSON.stringify(draft));
+    ['targetRegions','customerLocation','industry','orderNumber','bookingDate','oracleDeliveryLead'].forEach(key=>delete payload.profile?.[key]);
+    payload.stakeholders=compactRows(draft.stakeholders,['name','role','influence','notes']);
+    payload.meetings=compactRows(draft.meetings,['topic','day','time','cadence','cadenceOther','audience','notes']);
+    for(const key of ['reasons','goals','concerns'])Object.values(payload[key]||{}).forEach(item=>delete item.executiveMandate);
+    payload.successMeasures=(draft.successMeasures||[]).filter(v=>v&&(['name','shortDescription','targetGoal'].some(key=>String(v[key]??'').trim())||v.hardBlocker===true)).map(v=>({
+      name:v.name||'',shortDescription:v.shortDescription||'',
+      hardBlocker:v.hardBlocker===true||(v.hardBlocker==null&&v.impactsGoNoGo==='Yes'),
+      targetGoal:v.targetGoal||''
+    }));
+    const {entry}=await api(path,{method,body:JSON.stringify(payload)});
     draft=null;editingId=null;location.hash=`#/entry/${encodeURIComponent(entry.id)}`;
   } catch(error) {button.disabled=false;button.textContent=editingId?'Save changes':'Submit entry';app.querySelector('.form-actions').insertAdjacentHTML('beforebegin',message(`Save failed: ${error.message}`,true));}
 }
